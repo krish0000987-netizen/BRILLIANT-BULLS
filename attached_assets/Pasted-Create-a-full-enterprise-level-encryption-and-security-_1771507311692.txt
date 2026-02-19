@@ -1,0 +1,45 @@
+Create a full enterprise-level encryption and security system for my trading SaaS software that must safely handle more than 10,000 users and follow fintech-grade security standards. The system must be production-ready, modular, scalable, and secure.
+
+Implement secure authentication using bcrypt or Argon2 password hashing with salt rounds at least 12. Never store plain passwords. Add signup, login, logout, forgot password, and reset password with email OTP verification. Reset tokens expire in 10 minutes.
+
+Add Google Login using Google Cloud OAuth 2.0 Authentication. Integrate Google Identity Services with secure OAuth flow. Verify Google ID token on backend, create user account if not exists, link existing account if email matches, and store minimal user info securely. Never store Google passwords. Use secure redirect URIs and environment variables for Google Client ID and Secret. Add option to enable or disable Google login.
+
+Implement JWT authentication with refresh tokens. Access tokens expire in 15 minutes and refresh tokens in 7 days. Store refresh tokens in HTTP-only secure cookies. Protect all trading APIs using JWT middleware.
+
+Encrypt sensitive data using AES-256 encryption. Encrypt broker API keys, trading tokens, payment info, personal details, and subscription data. Store encryption keys in environment variables with key-rotation support.
+
+Force HTTPS with security headers including HSTS, Content Security Policy, XSS protection, frame guard, no-sniff headers, and automatic HTTP-to-HTTPS redirect.
+
+Add Two-Factor Authentication using OTP via email or authenticator apps. Make 2FA mandatory for withdrawals and recommended for login.
+
+Add rate limiting to prevent brute-force attacks. Allow maximum 5 login attempts per minute per IP. Add CAPTCHA and IP blocking after repeated failures.
+
+Secure database connections with SSL and prepared statements to prevent SQL injection. Sanitize inputs and outputs.
+
+Add role-based access control with roles Admin, Manager, Support, User. Protect admin routes securely.
+
+Create device login tracking. Save device ID, browser info, IP address, and location. Send alerts on new device or new country login. Allow user to see logged-in devices and logout remotely.
+
+Create geo-location login alerts. Require OTP verification if login from unusual location.
+
+Create withdrawal confirmation security. Require OTP verification and email confirmation before withdrawal. Add cooldown time and limits.
+
+Create subscription fraud detection. Detect multiple accounts using same payment method, VPN signups, rapid cancellations, and unusual activity. Flag suspicious users.
+
+Create admin activity logs. Log admin actions including user edits, payment changes, withdrawal approvals, and data export. Logs must be tamper-proof.
+
+Create audit logs for login attempts, password changes, API key usage, payment events, and suspicious activity. Send alerts to admin dashboard.
+
+Encrypt API communication using JWT or OAuth tokens. Encrypt broker API keys in database and decrypt only in memory.
+
+Add automatic logout after 30 minutes inactivity. Track sessions.
+
+Add encrypted daily database backups using AES-256.
+
+Add DDoS protection compatibility with Cloudflare CDN.
+
+Provide example .env file including Google OAuth credentials, JWT secret, encryption keys, database URL, and email server credentials.
+
+Provide setup instructions for Google Cloud OAuth including creating project, enabling OAuth consent screen, adding redirect URI, and testing login.
+
+Ensure code is clean, modular, documented, and suitable for fintech trading SaaS.
