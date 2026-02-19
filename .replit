@@ -37,3 +37,11 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[agent]
+integrations = ["javascript_database:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+ENCRYPTION_KEY = "1d2d9d525fb2ed98a0777799d4e2f5b4aae1a73d0ad2c4eefd84c05b8ce5666e"
