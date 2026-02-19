@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Play, Square, Trash2, ArrowDown } from "lucide-react";
+import { Play, Square, Trash2, ArrowDown, FlaskConical } from "lucide-react";
 
 interface LogLine {
   timestamp: string;
@@ -15,6 +15,7 @@ interface LogLine {
 
 interface AlgoStatus {
   status: string;
+  mode: "live" | "test";
   isRunning: boolean;
   startedAt: string | null;
   logCount: number;
@@ -40,6 +41,24 @@ export default function LiveLogsPage() {
     onSuccess: (data: any) => {
       if (data.success) {
         toast({ title: "Algorithm Started", description: data.message });
+      } else {
+        toast({ title: "Could Not Start", description: data.message, variant: "destructive" });
+      }
+      refetchStatus();
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const startTestMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/algo/start-test");
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast({ title: "Test Mode Started", description: "Algorithm running in test mode — no schedule restrictions" });
       } else {
         toast({ title: "Could Not Start", description: data.message, variant: "destructive" });
       }
@@ -119,9 +138,20 @@ export default function LiveLogsPage() {
     }
   };
 
+  const isTestMode = algoStatus?.mode === "test";
   const statusColor = algoStatus?.isRunning
-    ? "bg-green-500/10 text-green-600 dark:text-green-400"
+    ? isTestMode
+      ? "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+      : "bg-green-500/10 text-green-600 dark:text-green-400"
     : "bg-muted text-muted-foreground";
+
+  const statusLabel = algoStatus?.isRunning
+    ? isTestMode
+      ? "Test Running"
+      : "Running"
+    : algoStatus?.status === "stopping"
+      ? "Stopping..."
+      : "Idle";
 
   return (
     <div className="space-y-4 h-full flex flex-col">
@@ -136,17 +166,28 @@ export default function LiveLogsPage() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="secondary" className={`text-xs ${statusColor}`} data-testid="badge-algo-status">
-            {algoStatus?.isRunning ? "Running" : algoStatus?.status === "stopping" ? "Stopping..." : "Idle"}
+            {statusLabel}
           </Badge>
           {!algoStatus?.isRunning ? (
-            <Button
-              onClick={() => startMutation.mutate()}
-              disabled={startMutation.isPending || !algoStatus?.csvExists}
-              data-testid="button-start-algo"
-            >
-              <Play className="h-4 w-4 mr-2" />
-              {startMutation.isPending ? "Starting..." : "Start"}
-            </Button>
+            <>
+              <Button
+                onClick={() => startMutation.mutate()}
+                disabled={startMutation.isPending || startTestMutation.isPending || !algoStatus?.csvExists}
+                data-testid="button-start-algo"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                {startMutation.isPending ? "Starting..." : "Start Live"}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => startTestMutation.mutate()}
+                disabled={startMutation.isPending || startTestMutation.isPending || !algoStatus?.csvExists}
+                data-testid="button-start-test"
+              >
+                <FlaskConical className="h-4 w-4 mr-2" />
+                {startTestMutation.isPending ? "Starting..." : "Test Mode"}
+              </Button>
+            </>
           ) : (
             <Button
               variant="outline"

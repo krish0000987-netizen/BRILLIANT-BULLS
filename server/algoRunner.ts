@@ -18,6 +18,7 @@ class AlgoRunner {
   private maxBufferSize = 2000;
   private listeners: Set<LogListener> = new Set();
   private _status: "idle" | "running" | "stopping" | "scheduled" = "idle";
+  private _mode: "live" | "test" = "live";
   private startedAt: Date | null = null;
   private cronJobs: any[] = [];
   private scheduledJobsInitialized = false;
@@ -34,9 +35,14 @@ class AlgoRunner {
     return [...this.logBuffer];
   }
 
+  get mode() {
+    return this._mode;
+  }
+
   get runInfo() {
     return {
       status: this._status,
+      mode: this._mode,
       isRunning: this.isRunning,
       startedAt: this.startedAt?.toISOString() || null,
       logCount: this.logBuffer.length,
@@ -99,6 +105,12 @@ class AlgoRunner {
     return () => this.listeners.delete(fn);
   }
 
+  startTest(): { success: boolean; message: string } {
+    this._mode = "test";
+    this.addLog("info", "[TEST MODE] Starting algorithm in test mode — schedule rules bypassed");
+    return this.start();
+  }
+
   start(): { success: boolean; message: string } {
     if (this.isRunning) {
       return { success: false, message: "Algorithm is already running" };
@@ -114,7 +126,8 @@ class AlgoRunner {
     }
 
     this.logBuffer = [];
-    this.addLog("info", "Starting algorithm...");
+    const modeLabel = this._mode === "test" ? "[TEST MODE] " : "";
+    this.addLog("info", `${modeLabel}Starting algorithm...`);
     this._status = "running";
     this.startedAt = new Date();
 
@@ -152,6 +165,7 @@ class AlgoRunner {
         this.addLog("info", `Algorithm process exited with code ${code}`);
         this.process = null;
         this._status = "idle";
+        this._mode = "live";
       });
 
       this.process.on("error", (err) => {

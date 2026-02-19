@@ -374,7 +374,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/algo/start", isAuthenticated, async (req: AuthRequest, res: Response) => {
     const result = algoRunner.start();
-    await logAudit(getUserId(req), "Algorithm started", "algo", req, result.success ? "info" : "warning", result.message);
+    await logAudit(getUserId(req), "Algorithm started (live)", "algo", req, result.success ? "info" : "warning", result.message);
+    res.json(result);
+  });
+
+  app.post("/api/algo/start-test", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    const result = algoRunner.startTest();
+    await logAudit(getUserId(req), "Algorithm started (test mode)", "algo", req, result.success ? "info" : "warning", result.message);
     res.json(result);
   });
 
