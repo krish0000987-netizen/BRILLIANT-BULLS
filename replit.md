@@ -4,6 +4,12 @@
 Enterprise-grade security and authentication wrapper system for an existing Python trading SaaS application (alice_blue_trail_enhanced.py). The wrapper provides authentication, encryption, device management, audit logging, and configuration management without modifying the original trading code.
 
 ## Recent Changes
+- 2026-02-19: Fixed Live Logs scrolling and SSE streaming
+  - Rebuilt log container with proper flexbox layout (flex-1 min-h-0) for full-height scrolling
+  - SSE auto-reconnects on error with 3s delay, clears logs on reconnect to avoid duplicates
+  - Added SSE heartbeat (15s) on server to keep connections alive
+  - Added level labels (OUT/ERR/INF/WRN) and terminal-like dark background
+  - Added SSE connection status indicator ("Reconnecting..." badge)
 - 2026-02-19: Added Test Mode scheduled start at 9:30 AM IST
   - Cron job auto-starts algorithm in test mode at 9:30 AM IST (Mon-Fri)
   - Schedule: Live 8:45 AM, Test 9:30 AM, Stop 3:10 PM, CSV Delete 3:30 PM

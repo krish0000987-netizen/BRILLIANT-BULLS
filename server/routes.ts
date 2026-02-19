@@ -402,10 +402,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get("/api/algo/logs/stream", isAuthenticated, async (req: AuthRequest, res: Response) => {
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
+      "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
       "X-Accel-Buffering": "no",
     });
+    res.flushHeaders();
 
     const existingLogs = algoRunner.logs;
     for (const log of existingLogs) {
@@ -418,8 +419,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       } catch {}
     });
 
+    const heartbeat = setInterval(() => {
+      try {
+        res.write(`: heartbeat\n\n`);
+      } catch {
+        clearInterval(heartbeat);
+      }
+    }, 15000);
+
     req.on("close", () => {
       remove();
+      clearInterval(heartbeat);
     });
   });
 

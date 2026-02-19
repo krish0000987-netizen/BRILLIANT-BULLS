@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,9 @@ export default function LiveLogsPage() {
   const { toast } = useToast();
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [sseConnected, setSseConnected] = useState(false);
   const logContainerRef = useRef<HTMLDivElement>(null);
+  const logEndRef = useRef<HTMLDivElement>(null);
 
   const { data: algoStatus, refetch: refetchStatus } = useQuery<AlgoStatus>({
     queryKey: ["/api/algo/status"],
@@ -40,6 +42,7 @@ export default function LiveLogsPage() {
     },
     onSuccess: (data: any) => {
       if (data.success) {
+        setLogs([]);
         toast({ title: "Algorithm Started", description: data.message });
       } else {
         toast({ title: "Could Not Start", description: data.message, variant: "destructive" });
@@ -58,7 +61,8 @@ export default function LiveLogsPage() {
     },
     onSuccess: (data: any) => {
       if (data.success) {
-        toast({ title: "Test Mode Started", description: "Algorithm running in test mode — no schedule restrictions" });
+        setLogs([]);
+        toast({ title: "Test Mode Started", description: "Algorithm running in test mode" });
       } else {
         toast({ title: "Could Not Start", description: data.message, variant: "destructive" });
       }
@@ -101,48 +105,78 @@ export default function LiveLogsPage() {
     },
   });
 
-  const clearLogsMutation = useMutation({
-    mutationFn: async () => {
-      setLogs([]);
-    },
-  });
-
   useEffect(() => {
-    const eventSource = new EventSource("/api/algo/logs/stream");
+    let eventSource: EventSource | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let destroyed = false;
+    let isReconnect = false;
 
-    eventSource.onmessage = (event) => {
-      try {
-        const line: LogLine = JSON.parse(event.data);
-        setLogs((prev) => {
-          const next = [...prev, line];
-          if (next.length > 2000) return next.slice(-2000);
-          return next;
-        });
-      } catch {}
-    };
+    function connect() {
+      if (destroyed) return;
 
-    eventSource.onerror = () => {
-      eventSource.close();
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["/api/algo/status"] });
-      }, 2000);
-    };
+      if (isReconnect) {
+        setLogs([]);
+      }
+
+      eventSource = new EventSource("/api/algo/logs/stream", { withCredentials: true });
+
+      eventSource.onopen = () => {
+        setSseConnected(true);
+        isReconnect = true;
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const line: LogLine = JSON.parse(event.data);
+          setLogs((prev) => {
+            const next = [...prev, line];
+            if (next.length > 2000) return next.slice(-2000);
+            return next;
+          });
+        } catch {}
+      };
+
+      eventSource.onerror = () => {
+        setSseConnected(false);
+        if (eventSource) {
+          eventSource.close();
+          eventSource = null;
+        }
+        if (!destroyed) {
+          reconnectTimer = setTimeout(connect, 3000);
+        }
+      };
+    }
+
+    connect();
 
     return () => {
-      eventSource.close();
+      destroyed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
     };
   }, []);
 
-  useEffect(() => {
-    if (autoScroll && logContainerRef.current) {
-      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+  const scrollToBottom = useCallback(() => {
+    if (logEndRef.current) {
+      logEndRef.current.scrollIntoView({ behavior: "auto" });
     }
-  }, [logs, autoScroll]);
+  }, []);
+
+  useEffect(() => {
+    if (autoScroll) {
+      scrollToBottom();
+    }
+  }, [logs, autoScroll, scrollToBottom]);
 
   const handleScroll = () => {
     if (!logContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = logContainerRef.current;
-    setAutoScroll(scrollHeight - scrollTop - clientHeight < 50);
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    setAutoScroll(distanceFromBottom < 80);
   };
 
   const getLevelColor = (level: string) => {
@@ -156,6 +190,23 @@ export default function LiveLogsPage() {
         return "text-blue-400";
       default:
         return "text-foreground";
+    }
+  };
+
+  const getLevelLabel = (level: string) => {
+    switch (level) {
+      case "stderr":
+        return "ERR";
+      case "stdout":
+        return "OUT";
+      case "info":
+        return "INF";
+      case "error":
+        return "ERR";
+      case "warning":
+        return "WRN";
+      default:
+        return level.toUpperCase().slice(0, 3);
     }
   };
 
@@ -175,118 +226,117 @@ export default function LiveLogsPage() {
       : "Idle";
 
   return (
-    <div className="space-y-4 h-full flex flex-col">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-live-logs-title">
-            Live Algorithm Logs
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Monitor your trading algorithm in real-time
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="secondary" className={`text-xs ${statusColor}`} data-testid="badge-algo-status">
-            {statusLabel}
-          </Badge>
-          {!algoStatus?.isRunning ? (
-            <>
-              <Button
-                onClick={() => startMutation.mutate()}
-                disabled={startMutation.isPending || startTestMutation.isPending || !algoStatus?.csvExists}
-                data-testid="button-start-algo"
-              >
-                <Play className="h-4 w-4 mr-2" />
-                {startMutation.isPending ? "Starting..." : "Start Live"}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => startTestMutation.mutate()}
-                disabled={startMutation.isPending || startTestMutation.isPending || !algoStatus?.csvExists}
-                data-testid="button-start-test"
-              >
-                <FlaskConical className="h-4 w-4 mr-2" />
-                {startTestMutation.isPending ? "Starting..." : "Test Mode"}
-              </Button>
-            </>
-          ) : (
-            <Button
-              variant="outline"
-              onClick={() => stopMutation.mutate()}
-              disabled={stopMutation.isPending}
-              data-testid="button-stop-algo"
-            >
-              <Square className="h-4 w-4 mr-2" />
-              {stopMutation.isPending ? "Stopping..." : "Stop"}
-            </Button>
-          )}
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => clearLogsMutation.mutate()}
-            data-testid="button-clear-logs"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {!algoStatus?.csvExists && (
-        <Card className="p-3 border-amber-500/30 bg-amber-500/5">
-          <p className="text-sm text-amber-600 dark:text-amber-400">
-            No CSV config uploaded. Please go to the CSV Upload tab to upload your trading configuration before starting.
-          </p>
-        </Card>
-      )}
-
-      {algoStatus?.csvExists && (
-        <Card className="p-3">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600 dark:text-green-400">
-                CSV Config Active
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-shrink-0 space-y-3 pb-3">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-live-logs-title">
+              Live Algorithm Logs
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Monitor your trading algorithm in real-time
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="secondary" className={`text-xs ${statusColor}`} data-testid="badge-algo-status">
+              {statusLabel}
+            </Badge>
+            {!sseConnected && (
+              <Badge variant="secondary" className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                Reconnecting...
               </Badge>
-              <span className="text-xs text-muted-foreground">Auto-deletes at 3:30 PM IST</span>
-            </div>
-            {!showDeleteConfirm ? (
+            )}
+            {!algoStatus?.isRunning ? (
+              <>
+                <Button
+                  onClick={() => startMutation.mutate()}
+                  disabled={startMutation.isPending || startTestMutation.isPending || !algoStatus?.csvExists}
+                  data-testid="button-start-algo"
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  {startMutation.isPending ? "Starting..." : "Start Live"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => startTestMutation.mutate()}
+                  disabled={startMutation.isPending || startTestMutation.isPending || !algoStatus?.csvExists}
+                  data-testid="button-start-test"
+                >
+                  <FlaskConical className="h-4 w-4 mr-2" />
+                  {startTestMutation.isPending ? "Starting..." : "Test Mode"}
+                </Button>
+              </>
+            ) : (
               <Button
                 variant="outline"
-                size="sm"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={algoStatus?.isRunning}
-                data-testid="button-delete-config-logs"
+                onClick={() => stopMutation.mutate()}
+                disabled={stopMutation.isPending}
+                data-testid="button-stop-algo"
               >
-                <FileX className="h-3.5 w-3.5 mr-1" />
-                Delete Config
+                <Square className="h-4 w-4 mr-2" />
+                {stopMutation.isPending ? "Stopping..." : "Stop"}
               </Button>
-            ) : (
+            )}
+          </div>
+        </div>
+
+        {!algoStatus?.csvExists && (
+          <Card className="p-3 border-amber-500/30 bg-amber-500/5">
+            <p className="text-sm text-amber-600 dark:text-amber-400">
+              No CSV config uploaded. Please go to the CSV Upload tab to upload your trading configuration before starting.
+            </p>
+          </Card>
+        )}
+
+        {algoStatus?.csvExists && (
+          <Card className="p-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-destructive font-medium">Delete CSV config?</span>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => deleteConfigMutation.mutate()}
-                  disabled={deleteConfigMutation.isPending}
-                  data-testid="button-confirm-delete-config"
-                >
-                  {deleteConfigMutation.isPending ? "Deleting..." : "Yes, Delete"}
-                </Button>
+                <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600 dark:text-green-400">
+                  CSV Config Active
+                </Badge>
+                <span className="text-xs text-muted-foreground">Auto-deletes at 3:30 PM IST</span>
+              </div>
+              {!showDeleteConfirm ? (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowDeleteConfirm(false)}
-                  data-testid="button-cancel-delete-config"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={algoStatus?.isRunning}
+                  data-testid="button-delete-config-logs"
                 >
-                  Cancel
+                  <FileX className="h-3.5 w-3.5 mr-1" />
+                  Delete Config
                 </Button>
-              </div>
-            )}
-          </div>
-        </Card>
-      )}
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-destructive font-medium">Delete CSV config?</span>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => deleteConfigMutation.mutate()}
+                    disabled={deleteConfigMutation.isPending}
+                    data-testid="button-confirm-delete-config"
+                  >
+                    {deleteConfigMutation.isPending ? "Deleting..." : "Yes, Delete"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    data-testid="button-cancel-delete-config"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
+      </div>
 
-      <Card className="flex-1 min-h-0 p-0 overflow-hidden">
-        <div className="flex items-center justify-between gap-2 px-3 py-2 border-b">
+      <Card className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between gap-2 px-3 py-2 border-b flex-shrink-0">
           <p className="text-xs text-muted-foreground">{logs.length} log entries</p>
           <div className="flex items-center gap-2">
             {!autoScroll && (
@@ -295,9 +345,7 @@ export default function LiveLogsPage() {
                 variant="ghost"
                 onClick={() => {
                   setAutoScroll(true);
-                  if (logContainerRef.current) {
-                    logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-                  }
+                  scrollToBottom();
                 }}
                 data-testid="button-scroll-bottom"
               >
@@ -305,13 +353,20 @@ export default function LiveLogsPage() {
                 Scroll to bottom
               </Button>
             )}
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setLogs([])}
+              data-testid="button-clear-logs"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         </div>
         <div
           ref={logContainerRef}
           onScroll={handleScroll}
-          className="overflow-auto p-3 font-mono text-xs leading-5"
-          style={{ height: "calc(100vh - 300px)", minHeight: "400px" }}
+          className="flex-1 overflow-y-auto p-3 font-mono text-xs leading-relaxed bg-black/5 dark:bg-black/30"
           data-testid="container-logs"
         >
           {logs.length === 0 ? (
@@ -319,21 +374,27 @@ export default function LiveLogsPage() {
               <p>No logs yet. Start the algorithm to see output here.</p>
             </div>
           ) : (
-            logs.map((line, i) => (
-              <div key={i} className="flex gap-2 hover-elevate rounded px-1">
-                <span className="text-muted-foreground whitespace-nowrap flex-shrink-0">
-                  {new Date(line.timestamp).toLocaleTimeString()}
-                </span>
-                <span className={getLevelColor(line.level)}>
-                  {line.message}
-                </span>
-              </div>
-            ))
+            <>
+              {logs.map((line, i) => (
+                <div key={i} className="flex gap-2 py-px">
+                  <span className="text-muted-foreground whitespace-nowrap flex-shrink-0 select-none tabular-nums">
+                    {new Date(line.timestamp).toLocaleTimeString()}
+                  </span>
+                  <span className={`whitespace-nowrap flex-shrink-0 font-semibold w-8 text-center select-none ${getLevelColor(line.level)}`}>
+                    {getLevelLabel(line.level)}
+                  </span>
+                  <span className={`${getLevelColor(line.level)} break-all whitespace-pre-wrap`}>
+                    {line.message}
+                  </span>
+                </div>
+              ))}
+              <div ref={logEndRef} />
+            </>
           )}
         </div>
       </Card>
 
-      <div className="text-xs text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
+      <div className="flex-shrink-0 pt-2 text-xs text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
         <span>Schedule: Live 8:45 AM | Test 9:30 AM | Stop 3:10 PM | CSV cleanup 3:30 PM (Mon-Fri IST)</span>
         {algoStatus?.startedAt && (
           <span>Started: {new Date(algoStatus.startedAt).toLocaleString()}</span>

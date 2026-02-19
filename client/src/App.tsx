@@ -77,15 +77,39 @@ function AuthenticatedLayout() {
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <ThemeToggle />
           </header>
-          <main className="flex-1 overflow-auto p-4 sm:p-6">
+          <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
             <Switch>
               <Route path="/">{() => <RedirectTo to="/live-logs" />}</Route>
-              <Route path="/live-logs" component={LiveLogsPage} />
-              <Route path="/csv-upload" component={CsvUploadPage} />
-              <Route path="/settings" component={SettingsPage} />
-              <Route path="/admin/users" component={AdminUsersPage} />
-              <Route path="/admin/logs" component={AdminLogsPage} />
-              <Route component={NotFound} />
+              <Route path="/live-logs">{() => (
+                <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-6">
+                  <LiveLogsPage />
+                </div>
+              )}</Route>
+              <Route path="/csv-upload">{() => (
+                <div className="flex-1 overflow-auto p-4 sm:p-6">
+                  <CsvUploadPage />
+                </div>
+              )}</Route>
+              <Route path="/settings">{() => (
+                <div className="flex-1 overflow-auto p-4 sm:p-6">
+                  <SettingsPage />
+                </div>
+              )}</Route>
+              <Route path="/admin/users">{() => (
+                <div className="flex-1 overflow-auto p-4 sm:p-6">
+                  <AdminUsersPage />
+                </div>
+              )}</Route>
+              <Route path="/admin/logs">{() => (
+                <div className="flex-1 overflow-auto p-4 sm:p-6">
+                  <AdminLogsPage />
+                </div>
+              )}</Route>
+              <Route>{() => (
+                <div className="flex-1 overflow-auto p-4 sm:p-6">
+                  <NotFound />
+                </div>
+              )}</Route>
             </Switch>
           </main>
         </div>
