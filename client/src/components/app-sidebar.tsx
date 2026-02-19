@@ -16,22 +16,17 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Shield,
-  LayoutDashboard,
-  Smartphone,
   ScrollText,
-  FileKey,
   Settings,
   Users,
   LogOut,
   FileSpreadsheet,
+  Terminal,
 } from "lucide-react";
 
 const navItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Devices", url: "/devices", icon: Smartphone },
-  { title: "Credentials", url: "/credentials", icon: FileKey },
-  { title: "CSV Config", url: "/csv-config", icon: FileSpreadsheet },
-  { title: "Audit Logs", url: "/audit-logs", icon: ScrollText },
+  { title: "Live Logs", url: "/live-logs", icon: Terminal },
+  { title: "CSV Upload", url: "/csv-upload", icon: FileSpreadsheet },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
@@ -42,7 +37,7 @@ const adminItems = [
 
 export function AppSidebar() {
   const [location, navigate] = useLocation();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const isAdmin = user?.role === "admin" || user?.role === "manager";
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User";
@@ -66,7 +61,7 @@ export function AppSidebar() {
           </div>
           <div>
             <h2 className="text-sm font-semibold" data-testid="text-app-name">SecureTrader</h2>
-            <p className="text-xs text-muted-foreground">Security Hub</p>
+            <p className="text-xs text-muted-foreground">Trading Hub</p>
           </div>
         </div>
       </SidebarHeader>

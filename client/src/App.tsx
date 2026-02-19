@@ -12,11 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Moon, Sun, LogIn } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import NotFound from "@/pages/not-found";
-import DashboardPage from "@/pages/dashboard";
-import DevicesPage from "@/pages/devices";
-import CredentialsPage from "@/pages/credentials";
-import CsvConfigPage from "@/pages/csv-config";
-import AuditLogsPage from "@/pages/audit-logs";
+import LiveLogsPage from "@/pages/live-logs";
+import CsvUploadPage from "@/pages/csv-upload";
 import SettingsPage from "@/pages/settings";
 import AdminUsersPage from "@/pages/admin-users";
 import AdminLogsPage from "@/pages/admin-logs";
@@ -82,12 +79,9 @@ function AuthenticatedLayout() {
           </header>
           <main className="flex-1 overflow-auto p-4 sm:p-6">
             <Switch>
-              <Route path="/">{() => <RedirectTo to="/dashboard" />}</Route>
-              <Route path="/dashboard" component={DashboardPage} />
-              <Route path="/devices" component={DevicesPage} />
-              <Route path="/credentials" component={CredentialsPage} />
-              <Route path="/csv-config" component={CsvConfigPage} />
-              <Route path="/audit-logs" component={AuditLogsPage} />
+              <Route path="/">{() => <RedirectTo to="/live-logs" />}</Route>
+              <Route path="/live-logs" component={LiveLogsPage} />
+              <Route path="/csv-upload" component={CsvUploadPage} />
               <Route path="/settings" component={SettingsPage} />
               <Route path="/admin/users" component={AdminUsersPage} />
               <Route path="/admin/logs" component={AdminLogsPage} />

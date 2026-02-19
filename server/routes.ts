@@ -8,6 +8,7 @@ import multer from "multer";
 import crypto from "crypto";
 import { encrypt, decrypt } from "./encryption";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { algoRunner } from "./algoRunner";
 
 interface AuthRequest extends Request {
   user?: any;
@@ -361,6 +362,97 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch {
       res.status(500).json({ message: "Internal server error" });
     }
+  });
+
+  // ── Algorithm Runner Routes ───────────────────────────────────────────
+
+  algoRunner.setupScheduledJobs();
+
+  app.get("/api/algo/status", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    res.json(algoRunner.runInfo);
+  });
+
+  app.post("/api/algo/start", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    const result = algoRunner.start();
+    await logAudit(getUserId(req), "Algorithm started", "algo", req, result.success ? "info" : "warning", result.message);
+    res.json(result);
+  });
+
+  app.post("/api/algo/stop", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    const result = algoRunner.stop();
+    await logAudit(getUserId(req), "Algorithm stopped", "algo", req, "info", result.message);
+    res.json(result);
+  });
+
+  app.get("/api/algo/logs", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    res.json(algoRunner.logs);
+  });
+
+  app.get("/api/algo/logs/stream", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+    });
+
+    const existingLogs = algoRunner.logs;
+    for (const log of existingLogs) {
+      res.write(`data: ${JSON.stringify(log)}\n\n`);
+    }
+
+    const remove = algoRunner.addListener((line) => {
+      try {
+        res.write(`data: ${JSON.stringify(line)}\n\n`);
+      } catch {}
+    });
+
+    req.on("close", () => {
+      remove();
+    });
+  });
+
+  app.post("/api/algo/upload-config", isAuthenticated, upload.single("file") as any, async (req: AuthRequest, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const content = req.file.buffer.toString("utf-8");
+      const lines = content.trim().split("\n");
+
+      if (lines.length < 2) {
+        return res.status(400).json({ message: "CSV must have a header row and at least one data row" });
+      }
+
+      const headers = lines[0].split(",").map((h: string) => h.trim().toLowerCase());
+      if (headers.length < 3) {
+        return res.status(400).json({ message: "CSV must have at least 3 columns" });
+      }
+
+      const configContent = lines.slice(0, 2).join("\n");
+      algoRunner.saveConfig(configContent);
+
+      const { encrypted, iv, authTag } = encrypt(configContent);
+      await storage.createCsvConfig({
+        userId: getUserId(req),
+        fileName: req.file.originalname,
+        encryptedContent: encrypted,
+        iv,
+        authTag,
+      });
+
+      await logAudit(getUserId(req), `Algo CSV config uploaded: ${req.file.originalname}`, "config", req);
+      res.json({ success: true, message: "Config uploaded and saved" });
+    } catch (err: any) {
+      res.status(500).json({ message: "Failed to upload config" });
+    }
+  });
+
+  app.delete("/api/algo/config", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    algoRunner.deleteConfig();
+    await logAudit(getUserId(req), "Algo CSV config deleted", "config", req);
+    res.json({ success: true, message: "Config deleted" });
   });
 
   return httpServer;
