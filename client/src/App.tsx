@@ -9,12 +9,9 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, LogIn } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import NotFound from "@/pages/not-found";
-import LoginPage from "@/pages/login";
-import SignupPage from "@/pages/signup";
-import ForgotPasswordPage from "@/pages/forgot-password";
 import DashboardPage from "@/pages/dashboard";
 import DevicesPage from "@/pages/devices";
 import CredentialsPage from "@/pages/credentials";
@@ -42,6 +39,32 @@ function ThemeToggle() {
   );
 }
 
+function LoginPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center space-y-6 max-w-md px-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight" data-testid="text-app-title">SecureTrader</h1>
+          <p className="text-muted-foreground" data-testid="text-app-description">
+            Enterprise-grade security hub for your trading operations
+          </p>
+        </div>
+        <Button
+          size="lg"
+          onClick={() => { window.location.href = "/api/login"; }}
+          data-testid="button-login"
+        >
+          <LogIn className="mr-2 h-4 w-4" />
+          Sign in with Replit
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          Secure authentication powered by Replit
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function AuthenticatedLayout() {
   const style = {
     "--sidebar-width": "16rem",
@@ -59,6 +82,7 @@ function AuthenticatedLayout() {
           </header>
           <main className="flex-1 overflow-auto p-4 sm:p-6">
             <Switch>
+              <Route path="/">{() => <RedirectTo to="/dashboard" />}</Route>
               <Route path="/dashboard" component={DashboardPage} />
               <Route path="/devices" component={DevicesPage} />
               <Route path="/credentials" component={CredentialsPage} />
@@ -78,21 +102,6 @@ function AuthenticatedLayout() {
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
-  const [location, navigate] = useLocation();
-
-  useEffect(() => {
-    if (isLoading) return;
-    const publicPaths = ["/login", "/signup", "/forgot-password"];
-    if (!user && !publicPaths.includes(location)) {
-      navigate("/login");
-    }
-    if (user && publicPaths.includes(location)) {
-      navigate("/dashboard");
-    }
-    if (user && location === "/") {
-      navigate("/dashboard");
-    }
-  }, [user, isLoading, location, navigate]);
 
   if (isLoading) {
     return (
@@ -107,14 +116,7 @@ function AppRoutes() {
   }
 
   if (!user) {
-    return (
-      <Switch>
-        <Route path="/login" component={LoginPage} />
-        <Route path="/signup" component={SignupPage} />
-        <Route path="/forgot-password" component={ForgotPasswordPage} />
-        <Route>{() => <RedirectTo to="/login" />}</Route>
-      </Switch>
-    );
+    return <LoginPage />;
   }
 
   return <AuthenticatedLayout />;

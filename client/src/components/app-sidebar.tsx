@@ -45,16 +45,16 @@ export function AppSidebar() {
   const { user, logout } = useAuth();
 
   const isAdmin = user?.role === "admin" || user?.role === "manager";
-  const initials = user?.fullName
-    ?.split(" ")
+  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User";
+  const initials = displayName
+    .split(" ")
     .map((n) => n[0])
     .join("")
     .toUpperCase()
     .slice(0, 2) || "U";
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+  const handleLogout = () => {
+    window.location.href = "/api/logout";
   };
 
   return (
@@ -139,7 +139,7 @@ export function AppSidebar() {
             <AvatarFallback className="bg-primary/10 text-primary text-xs">{initials}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" data-testid="text-user-name">{user?.fullName}</p>
+            <p className="text-sm font-medium truncate" data-testid="text-user-name">{displayName}</p>
             <p className="text-xs text-muted-foreground truncate capitalize" data-testid="text-user-role">{user?.role}</p>
           </div>
           <Button

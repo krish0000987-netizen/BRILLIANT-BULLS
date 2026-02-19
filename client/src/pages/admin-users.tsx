@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -53,13 +53,12 @@ export default function AdminUsersPage() {
     },
   });
 
-  const filtered = (users || []).filter(
-    (u) =>
-      !searchTerm ||
-      u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filtered = (users || []).filter((u) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    const name = [u.firstName, u.lastName].filter(Boolean).join(" ").toLowerCase();
+    return name.includes(term) || (u.email?.toLowerCase().includes(term) ?? false);
+  });
 
   const roleColors: Record<string, string> = {
     admin: "bg-red-500/10 text-red-600 dark:text-red-400",
@@ -99,7 +98,8 @@ export default function AdminUsersPage() {
       ) : filtered.length > 0 ? (
         <div className="space-y-3">
           {filtered.map((u) => {
-            const initials = u.fullName
+            const displayName = [u.firstName, u.lastName].filter(Boolean).join(" ") || "User";
+            const initials = displayName
               .split(" ")
               .map((n) => n[0])
               .join("")
@@ -110,11 +110,12 @@ export default function AdminUsersPage() {
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-9 w-9">
+                      {u.profileImageUrl && <AvatarImage src={u.profileImageUrl} />}
                       <AvatarFallback className="bg-primary/10 text-primary text-xs">{initials}</AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium">{u.fullName}</p>
+                        <p className="text-sm font-medium">{displayName}</p>
                         <Badge variant="secondary" className={`text-xs capitalize ${roleColors[u.role] || ""}`}>
                           {u.role}
                         </Badge>
@@ -125,8 +126,8 @@ export default function AdminUsersPage() {
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        @{u.username} | {u.email}
-                        {u.lastLoginAt && ` | Last login: ${format(new Date(u.lastLoginAt), "MMM d, HH:mm")}`}
+                        {u.email || "No email"}
+                        {u.createdAt && ` | Joined: ${format(new Date(u.createdAt), "MMM d, yyyy")}`}
                       </p>
                     </div>
                   </div>

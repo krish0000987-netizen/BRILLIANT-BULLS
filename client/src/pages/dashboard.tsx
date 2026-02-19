@@ -20,7 +20,6 @@ export default function DashboardPage() {
 
   const { data: stats, isLoading } = useQuery<{
     totalDevices: number;
-    totalSessions: number;
     recentLogins: number;
     suspiciousEvents: number;
     totalCredentials: number;
@@ -44,8 +43,8 @@ export default function DashboardPage() {
       bg: "bg-blue-500/10",
     },
     {
-      label: "Active Sessions",
-      value: stats?.totalSessions ?? 0,
+      label: "Recent Logins",
+      value: stats?.recentLogins ?? 0,
       icon: Activity,
       color: "text-green-500 dark:text-green-400",
       bg: "bg-green-500/10",
@@ -70,7 +69,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-dashboard-title">
-          Welcome back, {user?.fullName?.split(" ")[0]}
+          Welcome back, {user?.firstName || "User"}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Your security overview at a glance
@@ -107,8 +106,8 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-3">
             <StatusRow
-              label="Password Strength"
-              status="strong"
+              label="Authentication"
+              status="Replit OIDC"
               icon={<CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />}
             />
             <StatusRow
