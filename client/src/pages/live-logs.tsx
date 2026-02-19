@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Play, Square, Trash2, ArrowDown, FlaskConical } from "lucide-react";
+import { Play, Square, Trash2, ArrowDown, FlaskConical, FileX } from "lucide-react";
 
 interface LogLine {
   timestamp: string;
@@ -77,6 +77,27 @@ export default function LiveLogsPage() {
     onSuccess: () => {
       toast({ title: "Algorithm Stopped" });
       refetchStatus();
+    },
+  });
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const deleteConfigMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/algo/config", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/algo/status"] });
+      toast({ title: "Config Deleted", description: "CSV configuration has been removed." });
+      setShowDeleteConfirm(false);
+    },
+    onError: () => {
+      toast({ title: "Delete Failed", description: "Could not delete the config file.", variant: "destructive" });
     },
   });
 
@@ -218,6 +239,52 @@ export default function LiveLogsPage() {
         </Card>
       )}
 
+      {algoStatus?.csvExists && (
+        <Card className="p-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600 dark:text-green-400">
+                CSV Config Active
+              </Badge>
+              <span className="text-xs text-muted-foreground">Auto-deletes at 3:30 PM IST</span>
+            </div>
+            {!showDeleteConfirm ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={algoStatus?.isRunning}
+                data-testid="button-delete-config-logs"
+              >
+                <FileX className="h-3.5 w-3.5 mr-1" />
+                Delete Config
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-destructive font-medium">Delete CSV config?</span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => deleteConfigMutation.mutate()}
+                  disabled={deleteConfigMutation.isPending}
+                  data-testid="button-confirm-delete-config"
+                >
+                  {deleteConfigMutation.isPending ? "Deleting..." : "Yes, Delete"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  data-testid="button-cancel-delete-config"
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
       <Card className="flex-1 min-h-0 p-0 overflow-hidden">
         <div className="flex items-center justify-between gap-2 px-3 py-2 border-b">
           <p className="text-xs text-muted-foreground">{logs.length} log entries</p>
@@ -267,7 +334,7 @@ export default function LiveLogsPage() {
       </Card>
 
       <div className="text-xs text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
-        <span>Schedule: Auto-start 8:45 AM | Auto-stop 3:10 PM | CSV cleanup 3:30 PM (Mon-Fri IST)</span>
+        <span>Schedule: Live 8:45 AM | Test 9:30 AM | Stop 3:10 PM | CSV cleanup 3:30 PM (Mon-Fri IST)</span>
         {algoStatus?.startedAt && (
           <span>Started: {new Date(algoStatus.startedAt).toLocaleString()}</span>
         )}

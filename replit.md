@@ -4,6 +4,10 @@
 Enterprise-grade security and authentication wrapper system for an existing Python trading SaaS application (alice_blue_trail_enhanced.py). The wrapper provides authentication, encryption, device management, audit logging, and configuration management without modifying the original trading code.
 
 ## Recent Changes
+- 2026-02-19: Added Test Mode scheduled start at 9:30 AM IST
+  - Cron job auto-starts algorithm in test mode at 9:30 AM IST (Mon-Fri)
+  - Schedule: Live 8:45 AM, Test 9:30 AM, Stop 3:10 PM, CSV Delete 3:30 PM
+  - Added CSV manual delete with confirmation on both Live Logs and CSV Upload pages
 - 2026-02-19: Migrated authentication from custom JWT to Replit Auth (OIDC)
   - Replaced bcrypt/JWT login with Replit OIDC authentication
   - Users table now uses Replit Auth user model (id, email, firstName, lastName, profileImageUrl)

@@ -35,6 +35,7 @@ export default function CsvUploadPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<{ headers: string[]; data: string[] } | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const { data: algoStatus } = useQuery<AlgoStatus>({
     queryKey: ["/api/algo/status"],
@@ -238,33 +239,60 @@ export default function CsvUploadPage() {
 
       {algoStatus?.csvExists && (
         <Card className="p-5 space-y-3">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <div>
               <p className="text-sm font-medium">Active Configuration</p>
               <p className="text-xs text-muted-foreground">
                 Configuration is saved and ready for the algorithm. It will be auto-deleted at 3:30 PM IST.
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => deleteMutation.mutate()}
-              disabled={deleteMutation.isPending || algoStatus?.isRunning}
-              data-testid="button-delete-config"
-            >
-              <Trash2 className="h-3.5 w-3.5 mr-1" />
-              Delete
-            </Button>
+            {!showDeleteConfirm ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={algoStatus?.isRunning}
+                data-testid="button-delete-config"
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                Delete Config
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-destructive font-medium">Are you sure?</span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    deleteMutation.mutate();
+                    setShowDeleteConfirm(false);
+                  }}
+                  disabled={deleteMutation.isPending}
+                  data-testid="button-confirm-delete"
+                >
+                  {deleteMutation.isPending ? "Deleting..." : "Yes, Delete"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  data-testid="button-cancel-delete"
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
           </div>
         </Card>
       )}
 
       <Card className="p-4">
         <div className="text-xs text-muted-foreground space-y-1">
-          <p className="font-medium">Schedule Info:</p>
-          <p>Algorithm auto-starts at 8:45 AM IST (Mon-Fri)</p>
-          <p>Algorithm auto-stops at 3:10 PM IST</p>
-          <p>CSV config auto-deleted at 3:30 PM IST</p>
+          <p className="font-medium">Schedule Info (Mon-Fri IST):</p>
+          <p>Live Mode auto-starts at 8:45 AM</p>
+          <p>Test Mode auto-starts at 9:30 AM</p>
+          <p>Algorithm auto-stops at 3:10 PM</p>
+          <p>CSV config auto-deleted at 3:30 PM</p>
           <p>Upload your config before 8:45 AM for automatic execution</p>
         </div>
       </Card>
