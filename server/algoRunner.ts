@@ -111,7 +111,8 @@ class AlgoRunner {
     return this.start();
   }
 
-  start(): { success: boolean; message: string } {
+  start(asLive = false): { success: boolean; message: string } {
+    if (asLive) this._mode = "live";
     if (this.isRunning) {
       return { success: false, message: "Algorithm is already running" };
     }
@@ -162,10 +163,10 @@ class AlgoRunner {
       });
 
       this.process.on("close", (code) => {
-        this.addLog("info", `Algorithm process exited with code ${code}`);
+        const modeStr = this._mode === "test" ? " [TEST MODE]" : "";
+        this.addLog("info", `Algorithm process exited with code ${code}${modeStr}`);
         this.process = null;
         this._status = "idle";
-        this._mode = "live";
       });
 
       this.process.on("error", (err) => {

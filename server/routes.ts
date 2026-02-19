@@ -28,6 +28,11 @@ function getDeviceFingerprint(req: Request): string {
   return crypto.createHash("md5").update(`${ua}-${ip}`).digest("hex");
 }
 
+function paramId(req: Request): string {
+  const id = req.params.id;
+  return Array.isArray(id) ? id[0] : id;
+}
+
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
@@ -164,7 +169,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.patch("/api/devices/:id/trust", isAuthenticated, async (req: AuthRequest, res: Response) => {
     try {
-      await storage.updateDevice(req.params.id, { isTrusted: true });
+      await storage.updateDevice(paramId(req), { isTrusted: true });
       await logAudit(getUserId(req), "Device marked as trusted", "security", req);
       res.json({ message: "Device trusted" });
     } catch {
@@ -174,7 +179,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.delete("/api/devices/:id", isAuthenticated, async (req: AuthRequest, res: Response) => {
     try {
-      await storage.deleteDevice(req.params.id);
+      await storage.deleteDevice(paramId(req));
       await logAudit(getUserId(req), "Device removed", "security", req);
       res.json({ message: "Device removed" });
     } catch {
@@ -219,7 +224,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/credentials/:id/decrypt", isAuthenticated, async (req: AuthRequest, res: Response) => {
     try {
-      const cred = await storage.getCredential(req.params.id);
+      const cred = await storage.getCredential(paramId(req));
       if (!cred || cred.userId !== getUserId(req)) {
         return res.status(404).json({ message: "Credential not found" });
       }
@@ -235,11 +240,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.delete("/api/credentials/:id", isAuthenticated, async (req: AuthRequest, res: Response) => {
     try {
-      const cred = await storage.getCredential(req.params.id);
+      const cred = await storage.getCredential(paramId(req));
       if (!cred || cred.userId !== getUserId(req)) {
         return res.status(404).json({ message: "Credential not found" });
       }
-      await storage.deleteCredential(req.params.id);
+      await storage.deleteCredential(paramId(req));
       await logAudit(getUserId(req), `Credential deleted: ${cred.credentialType}`, "credentials", req);
       res.json({ message: "Credential deleted" });
     } catch {
@@ -295,7 +300,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/csv-configs/:id/download", isAuthenticated, async (req: AuthRequest, res: Response) => {
     try {
-      const config = await storage.getCsvConfig(req.params.id);
+      const config = await storage.getCsvConfig(paramId(req));
       if (!config || config.userId !== getUserId(req)) {
         return res.status(404).json({ message: "Config not found" });
       }
@@ -313,11 +318,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.delete("/api/csv-configs/:id", isAuthenticated, async (req: AuthRequest, res: Response) => {
     try {
-      const config = await storage.getCsvConfig(req.params.id);
+      const config = await storage.getCsvConfig(paramId(req));
       if (!config || config.userId !== getUserId(req)) {
         return res.status(404).json({ message: "Config not found" });
       }
-      await storage.deleteCsvConfig(req.params.id);
+      await storage.deleteCsvConfig(paramId(req));
       await logAudit(getUserId(req), `CSV config deleted: ${config.fileName}`, "config", req);
       res.json({ message: "Config deleted" });
     } catch {
@@ -343,12 +348,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (typeof isActive === "boolean") updates.isActive = isActive;
       if (role) updates.role = role;
 
-      const updated = await storage.updateUser(req.params.id, updates);
+      const updated = await storage.updateUser(paramId(req), updates);
       if (!updated) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      await logAudit(getUserId(req), `Admin updated user ${req.params.id}`, "admin", req, "info", JSON.stringify(updates));
+      await logAudit(getUserId(req), `Admin updated user ${paramId(req)}`, "admin", req, "info", JSON.stringify(updates));
       res.json(updated);
     } catch {
       res.status(500).json({ message: "Internal server error" });
@@ -373,7 +378,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.post("/api/algo/start", isAuthenticated, async (req: AuthRequest, res: Response) => {
-    const result = algoRunner.start();
+    const result = algoRunner.start(true);
     await logAudit(getUserId(req), "Algorithm started (live)", "algo", req, result.success ? "info" : "warning", result.message);
     res.json(result);
   });
