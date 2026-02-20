@@ -14,6 +14,23 @@ interface AuthRequest extends Request {
   user?: any;
 }
 
+function isWithinISTTradingHours(): { allowed: boolean; message: string } {
+  const now = new Date();
+  const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  const hour = istTime.getHours();
+  const minute = istTime.getMinutes();
+  const totalMinutes = hour * 60 + minute;
+  const day = istTime.getDay();
+
+  if (day === 0 || day === 6) {
+    return { allowed: false, message: "Not available on weekends. Trading hours are Mon-Fri 9:00 AM – 3:00 PM IST." };
+  }
+  if (totalMinutes < 540 || totalMinutes >= 900) {
+    return { allowed: false, message: "Only available between 9:00 AM and 3:00 PM IST." };
+  }
+  return { allowed: true, message: "" };
+}
+
 function getUserId(req: AuthRequest): string {
   return req.user?.claims?.sub;
 }
@@ -276,6 +293,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/csv-configs/upload", isAuthenticated, upload.single("file") as any, async (req: AuthRequest, res: Response) => {
     try {
+      const timeCheck = isWithinISTTradingHours();
+      if (!timeCheck.allowed) {
+        return res.status(400).json({ message: timeCheck.message });
+      }
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
@@ -374,10 +395,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   algoRunner.setupScheduledJobs();
 
   app.get("/api/algo/status", isAuthenticated, async (req: AuthRequest, res: Response) => {
-    res.json(algoRunner.runInfo);
+    const timeCheck = isWithinISTTradingHours();
+    res.json({ ...algoRunner.runInfo, tradingHoursActive: timeCheck.allowed, tradingHoursMessage: timeCheck.message });
   });
 
   app.post("/api/algo/start", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    const timeCheck = isWithinISTTradingHours();
+    if (!timeCheck.allowed) {
+      return res.json({ success: false, message: timeCheck.message });
+    }
     const result = algoRunner.start(true);
     await logAudit(getUserId(req), "Algorithm started (live)", "algo", req, result.success ? "info" : "warning", result.message);
     res.json(result);
@@ -435,6 +461,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/algo/upload-config", isAuthenticated, upload.single("file") as any, async (req: AuthRequest, res: Response) => {
     try {
+      const timeCheck = isWithinISTTradingHours();
+      if (!timeCheck.allowed) {
+        return res.status(400).json({ message: timeCheck.message });
+      }
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }

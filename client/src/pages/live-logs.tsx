@@ -20,6 +20,8 @@ interface AlgoStatus {
   startedAt: string | null;
   logCount: number;
   csvExists: boolean;
+  tradingHoursActive: boolean;
+  tradingHoursMessage: string;
 }
 
 export default function LiveLogsPage() {
@@ -250,7 +252,7 @@ export default function LiveLogsPage() {
               <>
                 <Button
                   onClick={() => startMutation.mutate()}
-                  disabled={startMutation.isPending || startTestMutation.isPending || !algoStatus?.csvExists}
+                  disabled={startMutation.isPending || startTestMutation.isPending || !algoStatus?.csvExists || !algoStatus?.tradingHoursActive}
                   data-testid="button-start-algo"
                 >
                   <Play className="h-4 w-4 mr-2" />
@@ -284,6 +286,14 @@ export default function LiveLogsPage() {
           <Card className="p-3 border-amber-500/30 bg-amber-500/5">
             <p className="text-sm text-amber-600 dark:text-amber-400">
               No CSV config uploaded. Please go to the CSV Upload tab to upload your trading configuration before starting.
+            </p>
+          </Card>
+        )}
+
+        {algoStatus && !algoStatus.tradingHoursActive && !algoStatus.isRunning && (
+          <Card className="p-3 border-amber-500/30 bg-amber-500/5">
+            <p className="text-sm text-amber-600 dark:text-amber-400">
+              {algoStatus.tradingHoursMessage} Live mode can only be started during trading hours.
             </p>
           </Card>
         )}
