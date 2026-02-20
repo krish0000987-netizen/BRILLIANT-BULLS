@@ -12,7 +12,7 @@ Enterprise-grade security and authentication wrapper system for an existing Pyth
   - Added SSE connection status indicator ("Reconnecting..." badge)
 - 2026-02-19: Added Test Mode scheduled start at 9:30 AM IST
   - Cron job auto-starts algorithm in test mode at 9:30 AM IST (Mon-Fri)
-  - Schedule: Live 8:45 AM, Test 9:30 AM, Stop 3:10 PM, CSV Delete 3:30 PM
+  - Schedule: Live 9:15 AM, Test 9:30 AM, Stop 3:10 PM, CSV Delete 3:30 PM
   - Added CSV manual delete with confirmation on both Live Logs and CSV Upload pages
 - 2026-02-19: Migrated authentication from custom JWT to Replit Auth (OIDC)
   - Replaced bcrypt/JWT login with Replit OIDC authentication
