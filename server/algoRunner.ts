@@ -138,6 +138,7 @@ class AlgoRunner {
           ...process.env,
           PYTHONUNBUFFERED: "1",
           PYTHONIOENCODING: "utf-8",
+          TZ: "Asia/Kolkata",
         },
         stdio: ["ignore", "pipe", "pipe"],
       });

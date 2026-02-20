@@ -378,7 +378,7 @@ export default function LiveLogsPage() {
               {logs.map((line, i) => (
                 <div key={i} className="flex gap-2 py-px">
                   <span className="text-muted-foreground whitespace-nowrap flex-shrink-0 select-none tabular-nums">
-                    {new Date(line.timestamp).toLocaleTimeString()}
+                    {new Date(line.timestamp).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
                   </span>
                   <span className={`whitespace-nowrap flex-shrink-0 font-semibold w-8 text-center select-none ${getLevelColor(line.level)}`}>
                     {getLevelLabel(line.level)}
@@ -397,7 +397,7 @@ export default function LiveLogsPage() {
       <div className="flex-shrink-0 pt-2 text-xs text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
         <span>Schedule: Live 8:45 AM | Test 9:30 AM | Stop 3:10 PM | CSV cleanup 3:30 PM (Mon-Fri IST)</span>
         {algoStatus?.startedAt && (
-          <span>Started: {new Date(algoStatus.startedAt).toLocaleString()}</span>
+          <span>Started: {new Date(algoStatus.startedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })} IST</span>
         )}
       </div>
     </div>
