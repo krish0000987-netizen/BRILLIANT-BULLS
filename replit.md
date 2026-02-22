@@ -1,64 +1,93 @@
 # SecureTrader - Trading Security Hub
 
 ## Overview
-Enterprise-grade security and authentication wrapper system for an existing Python trading SaaS application (alice_blue_trail_enhanced.py). The wrapper provides authentication, encryption, device management, audit logging, and configuration management without modifying the original trading code.
+Enterprise-grade security and authentication wrapper system for an existing Python trading SaaS application (alice_blue_trail_enhanced.py). The wrapper provides authentication, encryption, device management, audit logging, subscription management, and configuration management without modifying the original trading code.
 
 ## Recent Changes
+- 2026-02-22: Replaced Replit Auth with custom username/password authentication
+  - bcrypt password hashing with express-session (connect-pg-simple)
+  - Login rate limiting (10 attempts per 15 minutes)
+  - Session cookie with httpOnly, sameSite=lax, secure in production
+  - Admin default credentials: username "admin", password "admin123"
+- 2026-02-22: Added subscription management system
+  - 3-day free trial, monthly (₹1,000), quarterly (₹2,000), yearly (₹10,000) plans
+  - Subscription enforcement middleware on live algo start and CSV upload
+  - Admin can assign/terminate subscriptions for any user
+  - User subscription page with plan cards and trial activation
+- 2026-02-22: Enhanced admin panel
+  - Create new users with username/password from admin panel
+  - Manage user subscriptions (assign plans, set custom days, terminate)
+  - View subscription status badges on user cards
+  - Search users by name, email, or username
+- 2026-02-22: Added algo log persistence to database (algo_logs table)
+- 2026-02-22: Updated schedule: Live 8:45 AM, Test 9:30 AM, Stop 3:10 PM, CSV Delete 4:00 PM IST
 - 2026-02-19: Fixed Live Logs scrolling and SSE streaming
   - Rebuilt log container with proper flexbox layout (flex-1 min-h-0) for full-height scrolling
   - SSE auto-reconnects on error with 3s delay, clears logs on reconnect to avoid duplicates
   - Added SSE heartbeat (15s) on server to keep connections alive
   - Added level labels (OUT/ERR/INF/WRN) and terminal-like dark background
   - Added SSE connection status indicator ("Reconnecting..." badge)
-- 2026-02-19: Added Test Mode scheduled start at 9:30 AM IST
-  - Cron job auto-starts algorithm in test mode at 9:30 AM IST (Mon-Fri)
-  - Schedule: Live 9:15 AM, Test 9:30 AM, Stop 3:10 PM, CSV Delete 3:30 PM
-  - Added CSV manual delete with confirmation on both Live Logs and CSV Upload pages
-- 2026-02-19: Migrated authentication from custom JWT to Replit Auth (OIDC)
-  - Replaced bcrypt/JWT login with Replit OIDC authentication
-  - Users table now uses Replit Auth user model (id, email, firstName, lastName, profileImageUrl)
-  - Extended users table with role and isActive fields for RBAC
-  - Removed old password-based auth pages (login, signup, forgot-password)
-  - Sessions managed via connect-pg-simple with express-session
-  - Login page now redirects to `/api/login` for Replit Auth flow
-  - Old password_reset_tokens and rate_limit_entries tables removed
 - 2026-02-19: Initial build of full-stack security wrapper
-  - PostgreSQL schema with users, sessions, devices, audit_logs, encrypted_credentials, csv_configs
-  - AES-256-GCM encryption for credentials and CSV configs
-  - Rate limiting (100 req/min general)
-  - Device fingerprinting with browser/OS detection
-  - Role-based access control (admin, manager, support, user)
-  - Security headers via Helmet
-  - Dark theme by default
-  - No 2FA (explicitly removed per user request)
 
 ## User Preferences
 - Dark mode default for fintech professional aesthetic
 - No two-factor authentication
+- No OTP verification — simple username/password auth
 - Original Python trading code must remain completely unchanged
 - CSV configuration read externally by Python code
 
 ## Project Architecture
 - **Frontend**: React + Vite + Shadcn UI + TanStack Query + wouter routing
-- **Backend**: Express.js with Replit Auth (OIDC), Helmet, rate limiting
+- **Backend**: Express.js with custom auth (bcrypt + express-session), Helmet, rate limiting
 - **Database**: PostgreSQL (Neon) via Drizzle ORM
 - **Encryption**: AES-256-GCM for sensitive data (credentials, CSV configs)
-- **Auth**: Replit Auth (OIDC via openid-client + passport), session-based with HTTP-only cookies
+- **Auth**: Custom username/password with bcrypt hashing, session-based with HTTP-only cookies
+
+### Database Tables
+- `users` - id, username, password (bcrypt), email, firstName, lastName, phone, role, isActive
+- `sessions` - Express session store (connect-pg-simple)
+- `subscriptions` - userId, plan (trial/monthly/quarterly/yearly), status, startDate, endDate, amount
+- `algo_logs` - userId, runId, level, message, loggedAt
+- `devices` - Device fingerprinting and tracking
+- `audit_logs` - Action audit trail with severity levels
+- `encrypted_credentials` - AES-256-GCM encrypted API credentials
+- `csv_configs` - Encrypted CSV trading configurations
 
 ### Key Files
-- `shared/models/auth.ts` - Replit Auth user/session schema (users, sessions tables)
-- `shared/schema.ts` - Domain schema (devices, audit_logs, encrypted_credentials, csv_configs) + re-exports auth models
-- `server/replit_integrations/auth/replitAuth.ts` - OIDC auth setup, login/callback/logout routes, isAuthenticated middleware
-- `server/replit_integrations/auth/storage.ts` - Auth user upsert storage
+- `shared/models/auth.ts` - User/session schema (users, sessions tables)
+- `shared/schema.ts` - Domain schema (subscriptions, algo_logs, devices, audit_logs, encrypted_credentials, csv_configs)
+- `server/replit_integrations/auth/replitAuth.ts` - Custom auth setup, login/logout, isAuthenticated/isAdmin middleware
 - `server/replit_integrations/auth/routes.ts` - /api/auth/user endpoint
-- `server/routes.ts` - All API endpoints (dashboard, devices, credentials, CSV, admin)
-- `server/storage.ts` - Database storage interface for domain entities
+- `server/routes.ts` - All API endpoints (auth, subscriptions, dashboard, devices, credentials, CSV, admin, algo)
+- `server/storage.ts` - Database storage interface with subscription/log methods
+- `server/algoRunner.ts` - Python algo process manager with cron scheduling and log persistence
 - `server/encryption.ts` - AES-256-GCM encryption/decryption utilities
-- `client/src/hooks/use-auth.ts` - Replit Auth hook (fetches /api/auth/user)
-- `client/src/lib/auth.tsx` - Auth context provider (wraps use-auth hook)
-- `client/src/components/theme-provider.tsx` - Dark/light theme provider
-- `client/src/components/app-sidebar.tsx` - Navigation sidebar
-- `client/src/pages/` - Page components (dashboard, devices, credentials, csv-config, audit-logs, settings, admin-users, admin-logs)
+- `client/src/hooks/use-auth.ts` - Auth hook (login, logout, fetch user)
+- `client/src/lib/auth.tsx` - Auth context provider
+- `client/src/App.tsx` - Login page and authenticated layout with routing
+- `client/src/components/app-sidebar.tsx` - Navigation sidebar with subscription and admin links
+- `client/src/pages/subscription.tsx` - Subscription management page
+- `client/src/pages/admin-users.tsx` - Admin user management with create user and subscription assignment
+- `client/src/pages/live-logs.tsx` - Real-time algorithm log viewer (SSE)
+- `client/src/pages/csv-upload.tsx` - CSV config upload page
+
+### API Routes
+- `POST /api/login` - Username/password login (rate limited)
+- `POST /api/logout` - Logout (destroy session)
+- `GET /api/auth/user` - Get current authenticated user
+- `GET /api/subscription` - Get user's subscription
+- `POST /api/subscription/start-trial` - Start 3-day free trial
+- `POST /api/subscription/buy` - Buy a plan (monthly/quarterly/yearly)
+- `POST /api/admin/users` - Create new user (admin only)
+- `PATCH /api/admin/users/:id` - Update user role/status (admin only)
+- `POST /api/admin/subscriptions/:userId` - Assign subscription (admin only)
+- `POST /api/admin/subscriptions/:userId/terminate` - Terminate subscription (admin only)
+
+### Trading Schedule (IST, Mon-Fri)
+- 8:45 AM - Auto-start algorithm (Live Mode)
+- 9:30 AM - Auto-start algorithm (Test Mode)
+- 3:10 PM - Auto-stop algorithm
+- 4:00 PM - Auto-delete CSV config
 
 ### Environment Variables
 - `DATABASE_URL` - PostgreSQL connection string

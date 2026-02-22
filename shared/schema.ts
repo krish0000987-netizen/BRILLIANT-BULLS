@@ -1,9 +1,40 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 import { z } from "zod";
 
 export * from "./models/auth";
 import { users } from "./models/auth";
+
+export const subscriptions = pgTable("subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  plan: varchar("plan").notNull().default("trial"),
+  status: varchar("status").notNull().default("inactive"),
+  amount: integer("amount").notNull().default(0),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  trialStartedAt: timestamp("trial_started_at"),
+  cancelledAt: timestamp("cancelled_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const subscriptionRelations = relations(subscriptions, ({ one }) => ({
+  user: one(users, { fields: [subscriptions.userId], references: [users.id] }),
+}));
+
+export const algoLogs = pgTable("algo_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  runId: varchar("run_id"),
+  level: varchar("level").notNull(),
+  message: text("message").notNull(),
+  loggedAt: timestamp("logged_at").notNull().defaultNow(),
+});
+
+export const algoLogsRelations = relations(algoLogs, ({ one }) => ({
+  user: one(users, { fields: [algoLogs.userId], references: [users.id] }),
+}));
 
 export const devices = pgTable("devices", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -76,3 +107,27 @@ export type Device = typeof devices.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type EncryptedCredential = typeof encryptedCredentials.$inferSelect;
 export type CsvConfig = typeof csvConfigs.$inferSelect;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type AlgoLog = typeof algoLogs.$inferSelect;
+
+export const insertSubscriptionSchema = z.object({
+  userId: z.string(),
+  plan: z.enum(["trial", "monthly", "quarterly", "yearly"]),
+  status: z.enum(["active", "inactive", "expired", "cancelled"]).default("inactive"),
+  amount: z.number().default(0),
+});
+
+export const loginSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export const createUserSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email().optional().or(z.literal("")),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  phone: z.string().optional(),
+  role: z.enum(["admin", "manager", "support", "user"]).default("user"),
+});

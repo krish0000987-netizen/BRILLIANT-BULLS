@@ -1,10 +1,8 @@
 import { sql } from "drizzle-orm";
-import { index, jsonb, pgTable, timestamp, varchar, boolean } from "drizzle-orm/pg-core";
+import { index, jsonb, pgTable, timestamp, varchar, boolean, text } from "drizzle-orm/pg-core";
 
 export const roleEnum = ["admin", "manager", "support", "user"] as const;
 
-// Session storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const sessions = pgTable(
   "sessions",
   {
@@ -15,14 +13,14 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)]
 );
 
-// User storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  username: varchar("username").unique().notNull(),
+  password: text("password").notNull(),
+  email: varchar("email"),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
+  phone: varchar("phone"),
   role: varchar("role").notNull().default("user"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),

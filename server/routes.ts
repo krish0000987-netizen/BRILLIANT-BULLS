@@ -6,8 +6,10 @@ import rateLimit from "express-rate-limit";
 import { UAParser } from "ua-parser-js";
 import multer from "multer";
 import crypto from "crypto";
+import bcrypt from "bcrypt";
 import { encrypt, decrypt } from "./encryption";
-import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { setupAuth, isAuthenticated, isAdmin } from "./replit_integrations/auth/replitAuth";
+import { registerAuthRoutes } from "./replit_integrations/auth/routes";
 import { algoRunner } from "./algoRunner";
 
 interface AuthRequest extends Request {
@@ -32,7 +34,7 @@ function isWithinISTTradingHours(): { allowed: boolean; message: string } {
 }
 
 function getUserId(req: AuthRequest): string {
-  return req.user?.claims?.sub;
+  return req.user?.id;
 }
 
 function getClientIp(req: Request): string {
@@ -48,6 +50,13 @@ function getDeviceFingerprint(req: Request): string {
 function paramId(req: Request): string {
   const id = req.params.id;
   return Array.isArray(id) ? id[0] : id;
+}
+
+function hasActiveSubscription(sub: any): boolean {
+  if (!sub) return false;
+  if (sub.status !== "active") return false;
+  if (sub.endDate && new Date(sub.endDate) < new Date()) return false;
+  return true;
 }
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -69,11 +78,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         },
       },
       crossOriginEmbedderPolicy: false,
-      hsts: {
-        maxAge: 31536000,
-        includeSubDomains: true,
-        preload: true,
-      },
+      hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
     })
   );
 
@@ -85,7 +90,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     legacyHeaders: false,
   });
 
+  const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { message: "Too many login attempts. Please try again in 15 minutes." },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
   app.use("/api/", apiLimiter);
+  app.use("/api/login", loginLimiter);
 
   async function logAudit(userId: string | null, action: string, category: string, req: Request, severity = "info", details?: string) {
     try {
@@ -112,10 +126,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
     const existing = await storage.getDeviceByFingerprint(userId, fingerprint);
     if (existing) {
-      await storage.updateDevice(existing.id, {
-        lastSeenAt: new Date(),
-        ipAddress: ip,
-      });
+      await storage.updateDevice(existing.id, { lastSeenAt: new Date(), ipAddress: ip });
     } else {
       await storage.createDevice({
         userId,
@@ -134,17 +145,122 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   }
 
-  function requireRole(...roles: string[]) {
-    return async (req: AuthRequest, res: Response, next: NextFunction) => {
+  // ── Subscription check middleware ──────────────────────────────────────
+  const requireSubscription = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const user = req.user;
+    if (user?.role === "admin" || user?.role === "manager") return next();
+
+    const sub = await storage.getSubscription(userId);
+    if (!hasActiveSubscription(sub)) {
+      return res.status(403).json({ message: "Active subscription required. Please subscribe to access this feature." });
+    }
+    next();
+  };
+
+  // ── Subscription Routes ────────────────────────────────────────────────
+
+  app.get("/api/subscription", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    try {
+      const sub = await storage.getSubscription(getUserId(req));
+      res.json(sub || null);
+    } catch {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/subscription/start-trial", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    try {
       const userId = getUserId(req);
-      if (!userId) return res.status(401).json({ message: "Unauthorized" });
-      const user = await storage.getUser(userId);
-      if (!user || !roles.includes(user.role)) {
-        return res.status(403).json({ message: "Insufficient permissions" });
+      const existing = await storage.getSubscription(userId);
+      if (existing && existing.trialStartedAt) {
+        return res.status(400).json({ message: "You have already used your free trial." });
       }
-      next();
-    };
-  }
+
+      const now = new Date();
+      const endDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+      if (existing) {
+        const updated = await storage.updateSubscription(existing.id, {
+          plan: "trial",
+          status: "active",
+          amount: 0,
+          startDate: now,
+          endDate,
+          trialStartedAt: now,
+        });
+        await logAudit(userId, "Started free trial", "subscription", req);
+        return res.json(updated);
+      }
+
+      const sub = await storage.createSubscription({
+        userId,
+        plan: "trial",
+        status: "active",
+        amount: 0,
+        startDate: now,
+        endDate,
+        trialStartedAt: now,
+        cancelledAt: null,
+      });
+      await logAudit(userId, "Started free trial", "subscription", req);
+      res.json(sub);
+    } catch {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/subscription/buy", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = getUserId(req);
+      const { plan } = req.body;
+
+      const planMap: Record<string, { days: number; amount: number }> = {
+        monthly: { days: 30, amount: 1000 },
+        quarterly: { days: 90, amount: 2000 },
+        yearly: { days: 365, amount: 10000 },
+      };
+
+      if (!planMap[plan]) {
+        return res.status(400).json({ message: "Invalid plan. Choose monthly, quarterly, or yearly." });
+      }
+
+      const { days, amount } = planMap[plan];
+      const now = new Date();
+      const endDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+      const existing = await storage.getSubscription(userId);
+      if (existing) {
+        const updated = await storage.updateSubscription(existing.id, {
+          plan,
+          status: "active",
+          amount,
+          startDate: now,
+          endDate,
+          cancelledAt: null,
+        });
+        await logAudit(userId, `Subscribed to ${plan} plan (₹${amount})`, "subscription", req);
+        return res.json(updated);
+      }
+
+      const sub = await storage.createSubscription({
+        userId,
+        plan,
+        status: "active",
+        amount,
+        startDate: now,
+        endDate,
+        trialStartedAt: null,
+        cancelledAt: null,
+      });
+      await logAudit(userId, `Subscribed to ${plan} plan (₹${amount})`, "subscription", req);
+      res.json(sub);
+    } catch {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // ── Dashboard ─────────────────────────────────────────────────────────
 
@@ -152,10 +268,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const userId = getUserId(req);
       await trackDevice(userId, req);
-      const [devicesList, credentialsList, logs] = await Promise.all([
+      const [devicesList, credentialsList, logs, sub] = await Promise.all([
         storage.getUserDevices(userId),
         storage.getUserCredentials(userId),
         storage.getUserAuditLogs(userId),
+        storage.getSubscription(userId),
       ]);
 
       const suspiciousEvents = logs.filter((l) => l.severity === "warning" || l.severity === "error" || l.severity === "critical").length;
@@ -166,6 +283,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         suspiciousEvents,
         recentLogins: logs.filter((l) => l.action.includes("logged in") || l.action.includes("login")).length,
         recentAuditLogs: logs.slice(0, 10),
+        subscription: sub || null,
       });
     } catch (err) {
       console.error("Dashboard error:", err);
@@ -177,8 +295,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/devices", isAuthenticated, async (req: AuthRequest, res: Response) => {
     try {
-      const devicesList = await storage.getUserDevices(getUserId(req));
-      res.json(devicesList);
+      res.json(await storage.getUserDevices(getUserId(req)));
     } catch {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -208,8 +325,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/credentials", isAuthenticated, async (req: AuthRequest, res: Response) => {
     try {
-      const creds = await storage.getUserCredentials(getUserId(req));
-      res.json(creds);
+      res.json(await storage.getUserCredentials(getUserId(req)));
     } catch {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -221,7 +337,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (!credentialType || !value) {
         return res.status(400).json({ message: "Type and value are required" });
       }
-
       const { encrypted, iv, authTag } = encrypt(value);
       const cred = await storage.createCredential({
         userId: getUserId(req),
@@ -231,7 +346,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         authTag,
         label: label || null,
       });
-
       await logAudit(getUserId(req), `Credential stored: ${credentialType}`, "credentials", req);
       res.json(cred);
     } catch {
@@ -245,10 +359,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (!cred || cred.userId !== getUserId(req)) {
         return res.status(404).json({ message: "Credential not found" });
       }
-
       const decrypted = decrypt(cred.encryptedValue, cred.iv, cred.authTag);
       await logAudit(getUserId(req), `Credential decrypted: ${cred.credentialType}`, "credentials", req, "info", `Label: ${cred.label}`);
-
       res.json({ value: decrypted });
     } catch {
       res.status(500).json({ message: "Failed to decrypt credential" });
@@ -273,8 +385,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/audit-logs", isAuthenticated, async (req: AuthRequest, res: Response) => {
     try {
-      const logs = await storage.getUserAuditLogs(getUserId(req));
-      res.json(logs);
+      res.json(await storage.getUserAuditLogs(getUserId(req)));
     } catch {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -284,8 +395,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/csv-configs", isAuthenticated, async (req: AuthRequest, res: Response) => {
     try {
-      const configs = await storage.getUserCsvConfigs(getUserId(req));
-      res.json(configs);
+      res.json(await storage.getUserCsvConfigs(getUserId(req)));
     } catch {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -293,17 +403,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/csv-configs/upload", isAuthenticated, upload.single("file") as any, async (req: AuthRequest, res: Response) => {
     try {
-      const timeCheck = isWithinISTTradingHours();
-      if (!timeCheck.allowed) {
-        return res.status(400).json({ message: timeCheck.message });
-      }
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
-      }
-
+      if (!req.file) return res.status(400).json({ message: "No file uploaded" });
       const content = req.file.buffer.toString("utf-8");
       const { encrypted, iv, authTag } = encrypt(content);
-
       const config = await storage.createCsvConfig({
         userId: getUserId(req),
         fileName: req.file.originalname,
@@ -311,7 +413,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         iv,
         authTag,
       });
-
       await logAudit(getUserId(req), `CSV config uploaded: ${req.file.originalname}`, "config", req);
       res.json(config);
     } catch {
@@ -325,10 +426,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (!config || config.userId !== getUserId(req)) {
         return res.status(404).json({ message: "Config not found" });
       }
-
       const decrypted = decrypt(config.encryptedContent, config.iv, config.authTag);
-      await logAudit(getUserId(req), `CSV config downloaded: ${config.fileName}`, "config", req);
-
       res.setHeader("Content-Type", "text/csv");
       res.setHeader("Content-Disposition", `attachment; filename="${config.fileName}"`);
       res.send(decrypted);
@@ -353,38 +451,153 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   // ── Admin Routes ──────────────────────────────────────────────────────
 
-  app.get("/api/admin/users", isAuthenticated, requireRole("admin", "manager") as any, async (req: AuthRequest, res: Response) => {
+  app.get("/api/admin/users", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
     try {
       const allUsers = await storage.getAllUsers();
-      res.json(allUsers);
+      const usersWithSubs = await Promise.all(
+        allUsers.map(async (u) => {
+          const sub = await storage.getSubscription(u.id);
+          const { password: _, ...safeUser } = u;
+          return { ...safeUser, subscription: sub || null };
+        })
+      );
+      res.json(usersWithSubs);
     } catch {
       res.status(500).json({ message: "Internal server error" });
     }
   });
 
-  app.patch("/api/admin/users/:id", isAuthenticated, requireRole("admin", "manager") as any, async (req: AuthRequest, res: Response) => {
+  app.post("/api/admin/users", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
     try {
-      const { isActive, role } = req.body;
+      const { username, password, email, firstName, lastName, phone, role } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password required" });
+      }
+
+      const existing = await storage.getUserByUsername(username);
+      if (existing) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      const user = await storage.createUser({ username, password, email, firstName, lastName, phone, role });
+      await logAudit(getUserId(req), `Admin created user: ${username}`, "admin", req);
+      const { password: _, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (err: any) {
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
+    try {
+      const { isActive, role, password } = req.body;
       const updates: any = {};
       if (typeof isActive === "boolean") updates.isActive = isActive;
       if (role) updates.role = role;
+      if (password) updates.password = await bcrypt.hash(password, 10);
 
       const updated = await storage.updateUser(paramId(req), updates);
-      if (!updated) {
-        return res.status(404).json({ message: "User not found" });
-      }
+      if (!updated) return res.status(404).json({ message: "User not found" });
 
-      await logAudit(getUserId(req), `Admin updated user ${paramId(req)}`, "admin", req, "info", JSON.stringify(updates));
-      res.json(updated);
+      await logAudit(getUserId(req), `Admin updated user ${paramId(req)}`, "admin", req, "info", JSON.stringify({ isActive, role }));
+      const { password: _, ...safeUser } = updated;
+      res.json(safeUser);
     } catch {
       res.status(500).json({ message: "Internal server error" });
     }
   });
 
-  app.get("/api/admin/logs", isAuthenticated, requireRole("admin", "manager") as any, async (req: AuthRequest, res: Response) => {
+  app.get("/api/admin/logs", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
     try {
-      const logs = await storage.getAllAuditLogs();
-      res.json(logs);
+      res.json(await storage.getAllAuditLogs());
+    } catch {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admin/algo-logs", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.query.userId as string;
+      if (userId) {
+        res.json(await storage.getUserAlgoLogs(userId));
+      } else {
+        res.json(await storage.getAllAlgoLogs());
+      }
+    } catch {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admin/subscriptions", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
+    try {
+      res.json(await storage.getAllSubscriptions());
+    } catch {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/subscriptions/:userId", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.params.userId;
+      const { plan, days } = req.body;
+
+      const planMap: Record<string, { defaultDays: number; amount: number }> = {
+        trial: { defaultDays: 3, amount: 0 },
+        monthly: { defaultDays: 30, amount: 1000 },
+        quarterly: { defaultDays: 90, amount: 2000 },
+        yearly: { defaultDays: 365, amount: 10000 },
+      };
+
+      if (!planMap[plan]) return res.status(400).json({ message: "Invalid plan" });
+
+      const { defaultDays, amount } = planMap[plan];
+      const now = new Date();
+      const endDate = new Date(now.getTime() + (days || defaultDays) * 24 * 60 * 60 * 1000);
+
+      const existing = await storage.getSubscription(userId);
+      if (existing) {
+        const updated = await storage.updateSubscription(existing.id, {
+          plan,
+          status: "active",
+          amount,
+          startDate: now,
+          endDate,
+          cancelledAt: null,
+          trialStartedAt: plan === "trial" ? now : existing.trialStartedAt,
+        });
+        await logAudit(getUserId(req), `Admin assigned ${plan} subscription to user ${userId}`, "admin", req);
+        return res.json(updated);
+      }
+
+      const sub = await storage.createSubscription({
+        userId,
+        plan,
+        status: "active",
+        amount,
+        startDate: now,
+        endDate,
+        trialStartedAt: plan === "trial" ? now : null,
+        cancelledAt: null,
+      });
+      await logAudit(getUserId(req), `Admin assigned ${plan} subscription to user ${userId}`, "admin", req);
+      res.json(sub);
+    } catch {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/subscriptions/:userId/terminate", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.params.userId;
+      const sub = await storage.getSubscription(userId);
+      if (!sub) return res.status(404).json({ message: "No subscription found" });
+
+      const updated = await storage.updateSubscription(sub.id, {
+        status: "cancelled",
+        cancelledAt: new Date(),
+      });
+      await logAudit(getUserId(req), `Admin terminated subscription for user ${userId}`, "admin", req, "warning");
+      res.json(updated);
     } catch {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -399,7 +612,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ ...algoRunner.runInfo, tradingHoursActive: timeCheck.allowed, tradingHoursMessage: timeCheck.message });
   });
 
-  app.post("/api/algo/start", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  app.post("/api/algo/start", isAuthenticated, requireSubscription as any, async (req: AuthRequest, res: Response) => {
     const timeCheck = isWithinISTTradingHours();
     if (!timeCheck.allowed) {
       return res.json({ success: false, message: timeCheck.message });
@@ -440,17 +653,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
 
     const remove = algoRunner.addListener((line) => {
-      try {
-        res.write(`data: ${JSON.stringify(line)}\n\n`);
-      } catch {}
+      try { res.write(`data: ${JSON.stringify(line)}\n\n`); } catch {}
     });
 
     const heartbeat = setInterval(() => {
-      try {
-        res.write(`: heartbeat\n\n`);
-      } catch {
-        clearInterval(heartbeat);
-      }
+      try { res.write(`: heartbeat\n\n`); } catch { clearInterval(heartbeat); }
     }, 15000);
 
     req.on("close", () => {
@@ -459,15 +666,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     });
   });
 
-  app.post("/api/algo/upload-config", isAuthenticated, upload.single("file") as any, async (req: AuthRequest, res: Response) => {
+  app.post("/api/algo/upload-config", isAuthenticated, requireSubscription as any, upload.single("file") as any, async (req: AuthRequest, res: Response) => {
     try {
-      const timeCheck = isWithinISTTradingHours();
-      if (!timeCheck.allowed) {
-        return res.status(400).json({ message: timeCheck.message });
-      }
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
-      }
+      if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
       const content = req.file.buffer.toString("utf-8");
       const lines = content.trim().split("\n");

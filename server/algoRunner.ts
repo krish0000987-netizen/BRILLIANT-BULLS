@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import os from "os";
 import * as cron from "node-cron";
+import { storage } from "./storage";
 
 interface LogLine {
   timestamp: string;
@@ -98,6 +99,7 @@ class AlgoRunner {
         listener(line);
       } catch {}
     });
+    storage.createAlgoLog({ level, message }).catch(() => {});
   }
 
   addListener(fn: LogListener): () => void {
@@ -216,8 +218,8 @@ class AlgoRunner {
     }
     this.cronJobs = [];
 
-    const startJob = cron.schedule("15 9 * * 1-5", () => {
-      this.addLog("info", "[SCHEDULER] Auto-starting algorithm at 9:15 AM IST (Live Mode)");
+    const startJob = cron.schedule("45 8 * * 1-5", () => {
+      this.addLog("info", "[SCHEDULER] Auto-starting algorithm at 8:45 AM IST (Live Mode)");
       if (this.csvExists()) {
         this.start(true);
       } else {
@@ -239,13 +241,13 @@ class AlgoRunner {
       this.stop();
     }, { timezone: "Asia/Kolkata" });
 
-    const deleteJob = cron.schedule("30 15 * * 1-5", () => {
-      this.addLog("info", "[SCHEDULER] Auto-deleting CSV config at 3:30 PM IST");
+    const deleteJob = cron.schedule("0 16 * * 1-5", () => {
+      this.addLog("info", "[SCHEDULER] Auto-deleting CSV config at 4:00 PM IST");
       this.deleteConfig();
     }, { timezone: "Asia/Kolkata" });
 
     this.cronJobs.push(startJob, testStartJob, stopJob, deleteJob);
-    this.addLog("info", "Scheduled jobs configured: Live Start 9:15 AM, Test Start 9:30 AM, Stop 3:10 PM, CSV Delete 3:30 PM (Mon-Fri IST)");
+    this.addLog("info", "Scheduled jobs configured: Live Start 8:45 AM, Test Start 9:30 AM, Stop 3:10 PM, CSV Delete 4:00 PM (Mon-Fri IST)");
   }
 }
 

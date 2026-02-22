@@ -1,10 +1,13 @@
 import { createContext, useContext } from "react";
-import { useAuth as useReplitAuth } from "@/hooks/use-auth";
+import { useAuth as useAuthHook } from "@/hooks/use-auth";
 import type { User } from "@shared/models/auth";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  login: (data: { username: string; password: string }) => Promise<User>;
+  loginError: string | null;
+  isLoggingIn: boolean;
   logout: () => void;
   isLoggingOut: boolean;
 }
@@ -12,10 +15,18 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { user, isLoading, logout, isLoggingOut } = useReplitAuth();
+  const auth = useAuthHook();
 
   return (
-    <AuthContext.Provider value={{ user: user ?? null, isLoading, logout, isLoggingOut }}>
+    <AuthContext.Provider value={{
+      user: auth.user ?? null,
+      isLoading: auth.isLoading,
+      login: auth.login,
+      loginError: auth.loginError,
+      isLoggingIn: auth.isLoggingIn,
+      logout: auth.logout,
+      isLoggingOut: auth.isLoggingOut,
+    }}>
       {children}
     </AuthContext.Provider>
   );

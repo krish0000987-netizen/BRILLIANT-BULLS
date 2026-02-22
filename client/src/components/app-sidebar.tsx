@@ -22,11 +22,13 @@ import {
   LogOut,
   FileSpreadsheet,
   Terminal,
+  CreditCard,
 } from "lucide-react";
 
 const navItems = [
   { title: "Live Logs", url: "/live-logs", icon: Terminal },
   { title: "CSV Upload", url: "/csv-upload", icon: FileSpreadsheet },
+  { title: "Subscription", url: "/subscription", icon: CreditCard },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
@@ -37,20 +39,16 @@ const adminItems = [
 
 export function AppSidebar() {
   const [location, navigate] = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const isAdmin = user?.role === "admin" || user?.role === "manager";
-  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User";
+  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || user?.username || "User";
   const initials = displayName
     .split(" ")
     .map((n) => n[0])
     .join("")
     .toUpperCase()
     .slice(0, 2) || "U";
-
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
-  };
 
   return (
     <Sidebar>
@@ -140,7 +138,7 @@ export function AppSidebar() {
           <Button
             size="icon"
             variant="ghost"
-            onClick={handleLogout}
+            onClick={() => logout()}
             data-testid="button-logout"
           >
             <LogOut className="h-4 w-4" />
