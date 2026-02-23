@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation, Link } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -12,10 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Moon, Sun, LogIn, Shield, AlertCircle } from "lucide-react";
+import { Moon, Sun, LogIn, Shield, AlertCircle, ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import NotFound from "@/pages/not-found";
+import LandingPage from "@/pages/landing";
 import LiveLogsPage from "@/pages/live-logs";
 import CsvUploadPage from "@/pages/csv-upload";
 import SettingsPage from "@/pages/settings";
@@ -61,6 +62,12 @@ function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center space-y-2">
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="mb-2 text-muted-foreground" data-testid="link-back-home">
+              <ArrowLeft className="mr-1 h-3.5 w-3.5" />
+              Back to home
+            </Button>
+          </Link>
           <div className="mx-auto p-3 rounded-full bg-primary/10 w-fit">
             <Shield className="h-8 w-8 text-primary" />
           </div>
@@ -179,6 +186,7 @@ function AuthenticatedLayout() {
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
+  const [location] = useLocation();
 
   if (isLoading) {
     return (
@@ -193,7 +201,25 @@ function AppRoutes() {
   }
 
   if (!user) {
-    return <LoginPage />;
+    if (location === "/login") {
+      return <LoginPage />;
+    }
+    return (
+      <Switch>
+        <Route path="/">{() => <LandingPage />}</Route>
+        <Route path="/login">{() => <LoginPage />}</Route>
+        <Route>{() => <RedirectTo to="/" />}</Route>
+      </Switch>
+    );
+  }
+
+  if (location === "/" || location === "/login") {
+    return (
+      <>
+        <RedirectTo to="/live-logs" />
+        <AuthenticatedLayout />
+      </>
+    );
   }
 
   return <AuthenticatedLayout />;
