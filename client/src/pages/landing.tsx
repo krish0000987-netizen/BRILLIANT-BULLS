@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTheme } from "@/components/theme-provider";
 import {
   Shield,
   Lock,
@@ -12,6 +13,8 @@ import {
   Zap,
   Eye,
   FileText,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 function FeatureCard({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
@@ -38,6 +41,8 @@ function StatCard({ value, label }: { value: string; label: string }) {
 }
 
 export default function LandingPage() {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <nav className="border-b border-border/50 sticky top-0 z-50 bg-background/80 backdrop-blur-md">
@@ -48,12 +53,17 @@ export default function LandingPage() {
             </div>
             <span className="font-bold text-lg" data-testid="text-landing-brand">SecureTrader</span>
           </div>
-          <Link href="/login">
-            <Button data-testid="button-landing-signin">
-              Sign In
-              <ChevronRight className="ml-1 h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <Button size="icon" variant="ghost" onClick={toggleTheme} data-testid="button-landing-theme-toggle">
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-          </Link>
+            <Link href="/login">
+              <Button data-testid="button-landing-signin">
+                Sign In
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </nav>
 

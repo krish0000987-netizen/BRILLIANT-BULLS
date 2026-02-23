@@ -58,8 +58,15 @@ function LoginPage() {
     }
   };
 
+  const { theme, toggleTheme } = useTheme();
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-screen flex items-center justify-center bg-background relative">
+      <div className="absolute top-4 right-4">
+        <Button size="icon" variant="ghost" onClick={toggleTheme} data-testid="button-login-theme-toggle">
+          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
+      </div>
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center space-y-2">
           <Link href="/">
