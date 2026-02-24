@@ -178,6 +178,32 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ── One-time admin fix: promote user by username ──────────────────────
+  app.post("/api/fix-admin", async (req: Request, res: Response) => {
+    try {
+      const { username } = req.body || {};
+      const allUsers = await storage.getAllUsers();
+      if (allUsers.length === 0) {
+        return res.status(400).json({ message: "No users exist" });
+      }
+      const admins = allUsers.filter(u => u.role === "admin");
+      if (admins.length > 0) {
+        return res.json({ message: "Admin already exists", admin: admins[0].username });
+      }
+      const target = username
+        ? allUsers.find(u => u.username === username)
+        : allUsers.sort((a, b) => new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime())[0];
+      if (!target) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const updated = await storage.updateUser(target.id, { role: "admin" });
+      res.json({ message: "Promoted to admin", username: updated?.username, role: updated?.role });
+    } catch (err: any) {
+      console.error("fix-admin error:", err);
+      res.status(500).json({ message: "Failed", error: err.message });
+    }
+  });
+
   // ── Subscription check middleware ──────────────────────────────────────
   const requireSubscription = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const userId = getUserId(req);
