@@ -164,7 +164,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ message: "Username already taken" });
       }
 
-      const user = await storage.createUser({ username, password, email, firstName, lastName, phone, role: "user" });
+      const allUsers = await storage.getAllUsers();
+      const assignedRole = allUsers.length === 0 ? "admin" : "user";
+
+      const user = await storage.createUser({ username, password, email, firstName, lastName, phone, role: assignedRole });
       await logAudit(user.id, "User registered", "auth", req);
 
       (req as any).session.userId = user.id;
