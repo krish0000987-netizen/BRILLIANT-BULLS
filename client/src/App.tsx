@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Moon, Sun, LogIn, Shield, AlertCircle, ArrowLeft } from "lucide-react";
+import { Moon, Sun, LogIn, Shield, AlertCircle, ArrowLeft, UserPlus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import NotFound from "@/pages/not-found";
@@ -124,6 +124,112 @@ function LoginPage() {
               )}
             </Button>
           </form>
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/signup" className="text-primary hover:underline font-medium" data-testid="link-signup">
+              Sign Up
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function SignUpPage() {
+  const { register, registerError, isRegistering } = useAuth();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const { theme, toggleTheme } = useTheme();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      await register({ username, password, firstName: firstName || undefined, lastName: lastName || undefined, email: email || undefined, phone: phone || undefined });
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background relative py-8">
+      <div className="absolute top-4 right-4">
+        <Button size="icon" variant="ghost" onClick={toggleTheme} data-testid="button-signup-theme-toggle">
+          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
+      </div>
+      <Card className="w-full max-w-md mx-4">
+        <CardHeader className="text-center space-y-2">
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="mb-2 text-muted-foreground" data-testid="link-back-home-signup">
+              <ArrowLeft className="mr-1 h-3.5 w-3.5" />
+              Back to home
+            </Button>
+          </Link>
+          <div className="mx-auto p-3 rounded-full bg-primary/10 w-fit">
+            <Shield className="h-8 w-8 text-primary" />
+          </div>
+          <CardTitle className="text-2xl" data-testid="text-signup-title">Create Account</CardTitle>
+          <CardDescription data-testid="text-signup-description">
+            Sign up for BRILLIANT BULLS
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {(error || registerError) && (
+              <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-md" data-testid="text-signup-error">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {error || registerError}
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="signup-firstName">First Name</Label>
+                <Input id="signup-firstName" type="text" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} data-testid="input-signup-firstname" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signup-lastName">Last Name</Label>
+                <Input id="signup-lastName" type="text" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} data-testid="input-signup-lastname" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="signup-username">Username <span className="text-destructive">*</span></Label>
+              <Input id="signup-username" type="text" placeholder="Choose a username" value={username} onChange={(e) => setUsername(e.target.value)} required data-testid="input-signup-username" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="signup-password">Password <span className="text-destructive">*</span></Label>
+              <Input id="signup-password" type="password" placeholder="At least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} required data-testid="input-signup-password" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="signup-email">Email</Label>
+              <Input id="signup-email" type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} data-testid="input-signup-email" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="signup-phone">Phone</Label>
+              <Input id="signup-phone" type="tel" placeholder="Phone number" value={phone} onChange={(e) => setPhone(e.target.value)} data-testid="input-signup-phone" />
+            </div>
+            <Button type="submit" className="w-full" disabled={isRegistering} data-testid="button-signup">
+              {isRegistering ? "Creating account..." : (
+                <>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Sign Up
+                </>
+              )}
+            </Button>
+          </form>
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link href="/login" className="text-primary hover:underline font-medium" data-testid="link-login">
+              Sign In
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -211,16 +317,20 @@ function AppRoutes() {
     if (location === "/login") {
       return <LoginPage />;
     }
+    if (location === "/signup") {
+      return <SignUpPage />;
+    }
     return (
       <Switch>
         <Route path="/">{() => <LandingPage />}</Route>
         <Route path="/login">{() => <LoginPage />}</Route>
+        <Route path="/signup">{() => <SignUpPage />}</Route>
         <Route>{() => <RedirectTo to="/" />}</Route>
       </Switch>
     );
   }
 
-  if (location === "/" || location === "/login") {
+  if (location === "/" || location === "/login" || location === "/signup") {
     return (
       <>
         <RedirectTo to="/live-logs" />

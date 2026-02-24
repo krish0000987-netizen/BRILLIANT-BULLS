@@ -8,6 +8,9 @@ interface AuthContextType {
   login: (data: { username: string; password: string }) => Promise<User>;
   loginError: string | null;
   isLoggingIn: boolean;
+  register: (data: { username: string; password: string; firstName?: string; lastName?: string; email?: string; phone?: string }) => Promise<User>;
+  registerError: string | null;
+  isRegistering: boolean;
   logout: () => void;
   isLoggingOut: boolean;
 }
@@ -24,6 +27,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login: auth.login,
       loginError: auth.loginError,
       isLoggingIn: auth.isLoggingIn,
+      register: auth.register,
+      registerError: auth.registerError,
+      isRegistering: auth.isRegistering,
       logout: auth.logout,
       isLoggingOut: auth.isLoggingOut,
     }}>

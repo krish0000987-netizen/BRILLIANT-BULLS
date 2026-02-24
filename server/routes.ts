@@ -145,6 +145,36 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   }
 
+  // ── Public Sign Up ───────────────────────────────────────────────────
+  app.post("/api/register", loginLimiter, async (req: Request, res: Response) => {
+    try {
+      const { username, password, email, firstName, lastName, phone } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      if (username.length < 3) {
+        return res.status(400).json({ message: "Username must be at least 3 characters" });
+      }
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      const existing = await storage.getUserByUsername(username);
+      if (existing) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+
+      const user = await storage.createUser({ username, password, email, firstName, lastName, phone, role: "user" });
+      await logAudit(user.id, "User registered", "auth", req);
+
+      (req as any).session.userId = user.id;
+      const { password: _, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (err: any) {
+      res.status(500).json({ message: "Registration failed. Please try again." });
+    }
+  });
+
   // ── Subscription check middleware ──────────────────────────────────────
   const requireSubscription = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const userId = getUserId(req);

@@ -33,6 +33,22 @@ async function loginFn(data: { username: string; password: string }): Promise<Us
   return response.json();
 }
 
+async function registerFn(data: { username: string; password: string; firstName?: string; lastName?: string; email?: string; phone?: string }): Promise<User> {
+  const response = await fetch("/api/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.message || "Registration failed");
+  }
+
+  return response.json();
+}
+
 async function logoutFn(): Promise<void> {
   await fetch("/api/logout", { method: "POST", credentials: "include" });
 }
@@ -53,6 +69,13 @@ export function useAuth() {
     },
   });
 
+  const registerMutation = useMutation({
+    mutationFn: registerFn,
+    onSuccess: (data) => {
+      queryClient.setQueryData(["/api/auth/user"], data);
+    },
+  });
+
   const logoutMutation = useMutation({
     mutationFn: logoutFn,
     onSuccess: () => {
@@ -67,6 +90,9 @@ export function useAuth() {
     login: loginMutation.mutateAsync,
     loginError: loginMutation.error?.message || null,
     isLoggingIn: loginMutation.isPending,
+    register: registerMutation.mutateAsync,
+    registerError: registerMutation.error?.message || null,
+    isRegistering: registerMutation.isPending,
     logout: logoutMutation.mutate,
     isLoggingOut: logoutMutation.isPending,
   };
