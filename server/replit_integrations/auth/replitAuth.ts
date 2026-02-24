@@ -60,8 +60,19 @@ export async function setupAuth(app: Express) {
         return res.status(401).json({ message: "Invalid username or password" });
       }
 
-      req.session.userId = user.id;
-      const { password: _, ...safeUser } = user;
+      // Auto-promote to admin if no admin exists yet
+      let finalUser = user;
+      if (user.role !== "admin") {
+        const allUsers = await db.select().from(users);
+        const hasAdmin = allUsers.some(u => u.role === "admin");
+        if (!hasAdmin) {
+          const [promoted] = await db.update(users).set({ role: "admin" }).where(eq(users.id, user.id)).returning();
+          if (promoted) finalUser = promoted;
+        }
+      }
+
+      req.session.userId = finalUser.id;
+      const { password: _, ...safeUser } = finalUser;
       res.json(safeUser);
     } catch (error) {
       console.error("Login error:", error);
