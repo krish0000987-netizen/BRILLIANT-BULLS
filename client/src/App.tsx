@@ -78,7 +78,7 @@ function LoginPage() {
           <div className="mx-auto p-3 rounded-full bg-primary/10 w-fit">
             <Shield className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl" data-testid="text-app-title">SecureTrader</CardTitle>
+          <CardTitle className="text-2xl" data-testid="text-app-title">BRILLIANT BULLS</CardTitle>
           <CardDescription data-testid="text-app-description">
             Sign in to your trading security hub
           </CardDescription>

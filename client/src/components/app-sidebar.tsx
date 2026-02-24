@@ -58,7 +58,7 @@ export function AppSidebar() {
             <Shield className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold" data-testid="text-app-name">SecureTrader</h2>
+            <h2 className="text-sm font-semibold" data-testid="text-app-name">BRILLIANT BULLS</h2>
             <p className="text-xs text-muted-foreground">Trading Hub</p>
           </div>
         </div>

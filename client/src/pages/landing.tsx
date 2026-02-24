@@ -51,7 +51,7 @@ export default function LandingPage() {
             <div className="p-1.5 rounded-lg bg-primary/10">
               <Shield className="h-5 w-5 text-primary" />
             </div>
-            <span className="font-bold text-lg" data-testid="text-landing-brand">SecureTrader</span>
+            <span className="font-bold text-lg" data-testid="text-landing-brand">BRILLIANT BULLS</span>
           </div>
           <div className="flex items-center gap-2">
             <Button size="icon" variant="ghost" onClick={toggleTheme} data-testid="button-landing-theme-toggle">
@@ -190,7 +190,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground" data-testid="text-landing-copyright">
-              SecureTrader. All rights reserved.
+              BRILLIANT BULLS. All rights reserved.
             </span>
           </div>
           <div className="text-sm text-muted-foreground">
