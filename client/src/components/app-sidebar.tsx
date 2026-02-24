@@ -23,6 +23,7 @@ import {
   FileSpreadsheet,
   Terminal,
   CreditCard,
+  LayoutDashboard,
 } from "lucide-react";
 
 const navItems = [
@@ -33,6 +34,7 @@ const navItems = [
 ];
 
 const adminItems = [
+  { title: "Admin Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "User Management", url: "/admin/users", icon: Users },
   { title: "System Logs", url: "/admin/logs", icon: ScrollText },
 ];

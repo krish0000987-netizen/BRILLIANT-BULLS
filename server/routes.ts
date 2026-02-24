@@ -481,6 +481,40 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   // ── Admin Routes ──────────────────────────────────────────────────────
 
+  app.get("/api/admin/stats", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const totalUsers = allUsers.length;
+      const activeUsers = allUsers.filter(u => u.isActive).length;
+      const adminCount = allUsers.filter(u => u.role === "admin").length;
+
+      const subs = await Promise.all(allUsers.map(u => storage.getSubscription(u.id)));
+      const activeSubs = subs.filter(s => s && s.status === "active" && s.endDate && new Date(s.endDate) > new Date()).length;
+      const trialSubs = subs.filter(s => s && s.plan === "trial" && s.status === "active").length;
+      const paidSubs = subs.filter(s => s && s.plan !== "trial" && s.status === "active" && s.endDate && new Date(s.endDate) > new Date()).length;
+
+      const allLogs = await storage.getAllAuditLogs();
+      const recentLogs = allLogs.slice(0, 5);
+      const recentUsers = allUsers
+        .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+        .slice(0, 5)
+        .map(u => ({ id: u.id, username: u.username, firstName: u.firstName, lastName: u.lastName, role: u.role, createdAt: u.createdAt }));
+
+      res.json({
+        totalUsers,
+        activeUsers,
+        adminCount,
+        activeSubs,
+        trialSubs,
+        paidSubs,
+        recentLogs,
+        recentUsers,
+      });
+    } catch {
+      res.status(500).json({ message: "Failed to load admin stats" });
+    }
+  });
+
   app.get("/api/admin/users", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
     try {
       const allUsers = await storage.getAllUsers();

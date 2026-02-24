@@ -21,6 +21,7 @@ import LiveLogsPage from "@/pages/live-logs";
 import CsvUploadPage from "@/pages/csv-upload";
 import SettingsPage from "@/pages/settings";
 import SubscriptionPage from "@/pages/subscription";
+import AdminDashboardPage from "@/pages/admin-dashboard";
 import AdminUsersPage from "@/pages/admin-users";
 import AdminLogsPage from "@/pages/admin-logs";
 import { useEffect } from "react";
@@ -272,6 +273,11 @@ function AuthenticatedLayout() {
               <Route path="/settings">{() => (
                 <div className="flex-1 overflow-auto p-4 sm:p-6">
                   <SettingsPage />
+                </div>
+              )}</Route>
+              <Route path="/admin">{() => (
+                <div className="flex-1 overflow-auto p-4 sm:p-6">
+                  <AdminDashboardPage />
                 </div>
               )}</Route>
               <Route path="/admin/users">{() => (
