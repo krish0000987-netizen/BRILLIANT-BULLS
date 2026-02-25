@@ -170,7 +170,7 @@ export default function CsvUploadPage() {
             <Button
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
-              disabled={algoStatus?.isRunning || !algoStatus?.tradingHoursActive}
+              disabled={algoStatus?.isRunning}
               data-testid="button-select-csv"
             >
               <Upload className="h-4 w-4 mr-2" />
@@ -184,11 +184,6 @@ export default function CsvUploadPage() {
           {algoStatus?.isRunning && (
             <p className="text-xs text-amber-600 dark:text-amber-400">
               Cannot upload while algorithm is running. Stop it first.
-            </p>
-          )}
-          {algoStatus && !algoStatus.tradingHoursActive && !algoStatus.isRunning && (
-            <p className="text-xs text-amber-600 dark:text-amber-400">
-              {algoStatus.tradingHoursMessage} CSV upload is only available during trading hours.
             </p>
           )}
         </div>
@@ -300,7 +295,6 @@ export default function CsvUploadPage() {
           <p>Test Mode auto-starts at 9:30 AM</p>
           <p>Algorithm auto-stops at 3:10 PM</p>
           <p>CSV config auto-deleted at 3:30 PM</p>
-          <p>CSV upload and Live mode available only between 9:00 AM – 3:00 PM IST</p>
         </div>
       </Card>
     </div>
