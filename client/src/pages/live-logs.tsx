@@ -293,7 +293,7 @@ export default function LiveLogsPage() {
         {algoStatus && !algoStatus.tradingHoursActive && !algoStatus.isRunning && (
           <Card className="p-3 border-amber-500/30 bg-amber-500/5">
             <p className="text-sm text-amber-600 dark:text-amber-400">
-              {algoStatus.tradingHoursMessage} Live mode can only be started during trading hours.
+              {algoStatus.tradingHoursMessage} Live mode can only be started during trading hours. Test Mode is available anytime.
             </p>
           </Card>
         )}
