@@ -22,6 +22,7 @@ interface AlgoStatus {
   csvExists: boolean;
   tradingHoursActive: boolean;
   tradingHoursMessage: string;
+  currentIST: string;
 }
 
 export default function LiveLogsPage() {
@@ -235,9 +236,16 @@ export default function LiveLogsPage() {
             <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-live-logs-title">
               Live Algorithm Logs
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Monitor your trading algorithm in real-time
-            </p>
+            <div className="flex items-center gap-3 mt-1">
+              <p className="text-sm text-muted-foreground">
+                Monitor your trading algorithm in real-time
+              </p>
+              {algoStatus?.currentIST && (
+                <Badge variant="outline" className="text-xs" data-testid="badge-ist-time">
+                  🕐 IST: {algoStatus.currentIST}
+                </Badge>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary" className={`text-xs ${statusColor}`} data-testid="badge-algo-status">

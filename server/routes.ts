@@ -702,7 +702,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/algo/status", isAuthenticated, async (req: AuthRequest, res: Response) => {
     const timeCheck = isWithinISTTradingHours();
-    res.json({ ...algoRunner.runInfo, tradingHoursActive: timeCheck.allowed, tradingHoursMessage: timeCheck.message });
+    const now = new Date();
+    const istTimeStr = now.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true, weekday: "short" });
+    res.json({ ...algoRunner.runInfo, tradingHoursActive: timeCheck.allowed, tradingHoursMessage: timeCheck.message, currentIST: istTimeStr });
   });
 
   app.post("/api/algo/start", isAuthenticated, requireSubscription as any, async (req: AuthRequest, res: Response) => {
