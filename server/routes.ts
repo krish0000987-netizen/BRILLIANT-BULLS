@@ -16,13 +16,29 @@ interface AuthRequest extends Request {
   user?: any;
 }
 
-function isWithinISTTradingHours(): { allowed: boolean; message: string } {
+function getISTDate(): Date {
   const now = new Date();
-  const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-  const hour = istTime.getHours();
-  const minute = istTime.getMinutes();
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utcMs + 5.5 * 3600000);
+}
+
+function formatISTTime(ist: Date): string {
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const day = days[ist.getDay()];
+  let h = ist.getHours();
+  const m = ist.getMinutes().toString().padStart(2, "0");
+  const s = ist.getSeconds().toString().padStart(2, "0");
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return `${day}, ${h}:${m}:${s} ${ampm} IST`;
+}
+
+function isWithinISTTradingHours(): { allowed: boolean; message: string } {
+  const ist = getISTDate();
+  const hour = ist.getHours();
+  const minute = ist.getMinutes();
   const totalMinutes = hour * 60 + minute;
-  const day = istTime.getDay();
+  const day = ist.getDay();
 
   if (day === 0 || day === 6) {
     return { allowed: false, message: "Not available on weekends. Trading hours are Mon-Fri 9:00 AM – 3:00 PM IST." };
@@ -702,8 +718,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/algo/status", isAuthenticated, async (req: AuthRequest, res: Response) => {
     const timeCheck = isWithinISTTradingHours();
-    const now = new Date();
-    const istTimeStr = now.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true, weekday: "short" });
+    const istTimeStr = formatISTTime(getISTDate());
     res.json({ ...algoRunner.runInfo, tradingHoursActive: timeCheck.allowed, tradingHoursMessage: timeCheck.message, currentIST: istTimeStr });
   });
 
