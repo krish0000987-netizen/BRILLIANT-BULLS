@@ -41,10 +41,10 @@ function isWithinISTTradingHours(): { allowed: boolean; message: string } {
   const day = ist.getDay();
 
   if (day === 0 || day === 6) {
-    return { allowed: false, message: "Not available on weekends. Trading hours are Mon-Fri 9:00 AM – 3:00 PM IST." };
+    return { allowed: false, message: "Not available on weekends. Trading hours are Mon-Fri 8:00 AM – 3:00 PM IST." };
   }
-  if (totalMinutes < 540 || totalMinutes >= 900) {
-    return { allowed: false, message: "Only available between 9:00 AM and 3:00 PM IST." };
+  if (totalMinutes < 480 || totalMinutes >= 900) {
+    return { allowed: false, message: "Only available between 8:00 AM and 3:00 PM IST." };
   }
   return { allowed: true, message: "" };
 }

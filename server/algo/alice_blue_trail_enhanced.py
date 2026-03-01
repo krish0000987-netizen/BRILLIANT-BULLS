@@ -13,10 +13,26 @@ import sys
 import csv
 import logging
 import requests
-from datetime import datetime, date, time as dt_time, timedelta
+from datetime import datetime, date, time as dt_time, timedelta, timezone
 from pathlib import Path
 import time as time_module
 from collections import defaultdict
+
+IST = timezone(timedelta(hours=5, minutes=30))
+
+def now_ist():
+    """Always returns current time in IST (GMT+5:30)"""
+    return datetime.now(IST).replace(tzinfo=None)
+
+
+class ISTFormatter(logging.Formatter):
+    """Logging formatter that always uses IST timestamps"""
+    converter = None
+    def formatTime(self, record, datefmt=None):
+        ist_dt = datetime.fromtimestamp(record.created, tz=IST)
+        if datefmt:
+            return ist_dt.strftime(datefmt)
+        return ist_dt.strftime('%Y-%m-%d %H:%M:%S') + ',%03d' % record.msecs
 
 # ─── Global session token (set at login, used for direct API calls) ──────────
 _SESSION_TOKEN = ""
@@ -192,18 +208,21 @@ class Config:
 def setup_logging():
     log_dir = Config.BASE_DIR / "logs"
     log_dir.mkdir(exist_ok=True)
-    log_file = log_dir / f"orb_enhanced_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+    log_file = log_dir / f"orb_enhanced_{now_ist().strftime('%Y%m%d_%H%M%S')}.log"
 
     log_level = logging.DEBUG if Config.DEBUG_MODE else logging.INFO
 
-    logging.basicConfig(
-        level=log_level,
-        format="%(asctime)s | %(levelname)-8s | %(message)s",
-        handlers=[
-            logging.FileHandler(log_file, encoding='utf-8'),
-            logging.StreamHandler(sys.stdout)
-        ]
-    )
+    fmt = ISTFormatter("%(asctime)s | %(levelname)-8s | %(message)s")
+    file_handler = logging.FileHandler(log_file, encoding='utf-8')
+    file_handler.setFormatter(fmt)
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(fmt)
+
+    root = logging.getLogger()
+    root.setLevel(log_level)
+    root.addHandler(file_handler)
+    root.addHandler(stream_handler)
+
     return logging.getLogger("ORB_Enhanced")
 
 logger = setup_logging()
@@ -211,7 +230,7 @@ logger = setup_logging()
 def is_market_open():
     if Config.TEST_MODE:
         return True
-    now = datetime.now()
+    now = now_ist()
     current_time = now.time()
     if now.weekday() >= 5:
         return False
@@ -220,14 +239,14 @@ def is_market_open():
 def should_squareoff():
     if Config.TEST_MODE:
         return False
-    return datetime.now().time() >= Config.AUTO_SQUAREOFF_TIME
+    return now_ist().time() >= Config.AUTO_SQUAREOFF_TIME
 
 def wait_for_market():
     if Config.TEST_MODE:
         logger.info("⚠️ TEST MODE: Bypassing market hours check")
         return True
 
-    now = datetime.now()
+    now = now_ist()
     current_time = now.time()
 
     if now.weekday() >= 5:
@@ -240,7 +259,7 @@ def wait_for_market():
         logger.info(f"⏰ Market opens at {Config.MARKET_START} — waiting...")
         try:
             while True:
-                now = datetime.now()
+                now = now_ist()
                 remaining = (market_open_dt - now).total_seconds()
                 if remaining <= 0:
                     break
@@ -254,14 +273,14 @@ def wait_for_market():
             return False
 
     # ── Phase 2: Wait for ORB window to complete (9:30 AM) ──────────────────
-    now = datetime.now()
+    now = now_ist()
     orb_ready_dt = datetime.combine(now.date(), Config.MARKET_START) + timedelta(minutes=15)
 
     if now < orb_ready_dt:
         logger.info("⏰ Waiting for ORB range to form (9:15 – 9:30 AM)...")
         try:
             while True:
-                now = datetime.now()
+                now = now_ist()
                 remaining = (orb_ready_dt - now).total_seconds()
                 if remaining <= 0:
                     break
@@ -280,7 +299,7 @@ def wait_for_market():
 # ✅ NEW FUNCTION: Calculate next 5-minute candle close time
 def get_next_5min_candle_close():
     """Returns the next 5-minute candle close time"""
-    now = datetime.now()
+    now = now_ist()
     current_minute = now.minute
     current_second = now.second
 
@@ -299,7 +318,7 @@ def get_next_5min_candle_close():
 # ✅ NEW FUNCTION: Check if we're at a 5-minute candle close
 def is_5min_candle_close():
     """Check if current time is a 5-minute candle close (9:35, 9:40, 9:45...)"""
-    now = datetime.now()
+    now = now_ist()
     # Check if minute is divisible by 5 and seconds are between 0-2 (small buffer for timing)
     return (now.minute % Config.CANDLE_INTERVAL_MINUTES == 0) and (now.second <= 2)
 
@@ -433,13 +452,13 @@ def create_instrument_mapping(alice, symbols):
 class StockStatusTracker:
     def __init__(self):
         self.stock_status = {}
-        self.last_display_time = datetime.now()
+        self.last_display_time = now_ist()
 
     def update_stock_status(self, symbol, status_data):
         self.stock_status[symbol] = status_data
 
     def display_status(self, force=False):
-        now = datetime.now()
+        now = now_ist()
         if not force and (now - self.last_display_time).seconds < Config.STATUS_DISPLAY_INTERVAL:
             return
 
@@ -714,7 +733,7 @@ class ORBScanner:
         if symbol in self.orb_data_cache:
             return self.orb_data_cache[symbol]
 
-        now = datetime.now()
+        now = now_ist()
         today_9_15 = datetime.combine(now.date(), dt_time(9, 15))
         today_9_30 = datetime.combine(now.date(), dt_time(9, 30))
 
@@ -826,7 +845,7 @@ class ORBScanner:
                 return None, None, None
 
             # ✅ CRITICAL FIX: Get 5-minute candles for validation
-            now = datetime.now()
+            now = now_ist()
             today_start = datetime.combine(now.date(), dt_time(9, 15))
 
             # First get 1-min data
@@ -957,7 +976,7 @@ class PositionManager:
                 qty = 1
 
             if Config.PAPER_TRADING or Config.TEST_MODE:
-                order_id = f"PAPER_{datetime.now().strftime('%H%M%S')}"
+                order_id = f"PAPER_{now_ist().strftime('%H%M%S')}"
                 logger.info(f"📝 PAPER: {side} {qty} {symbol} @ ₹{entry_price:.2f}")
             else:
                 transaction_type = TransactionType.Buy if side == 'BUY' else TransactionType.Sell
@@ -974,7 +993,7 @@ class PositionManager:
             self.positions[symbol] = {
                 'symbol': symbol, 'instrument': instrument, 'side': side, 'qty': qty,
                 'entry': entry_price, 'stop_loss': stop_loss, 'target': target,
-                'order_id': order_id, 'entry_time': datetime.now(),
+                'order_id': order_id, 'entry_time': now_ist(),
                 'direction': expected_direction, 'breakout_data': breakout_data
             }
 
@@ -1014,11 +1033,11 @@ class PositionManager:
             self.total_pnl += pnl
 
             trade_data = [
-                datetime.now().strftime('%Y-%m-%d %H:%M:%S'), symbol, pos['side'], pos['qty'],
+                now_ist().strftime('%Y-%m-%d %H:%M:%S'), symbol, pos['side'], pos['qty'],
                 pos['entry'], pos['stop_loss'], pos['target'], exit_price, pnl, exit_reason,
                 pos['order_id'], 'Closed', pos['direction'],
                 pos['entry_time'].strftime('%Y-%m-%d %H:%M:%S'),
-                datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                now_ist().strftime('%Y-%m-%d %H:%M:%S')
             ]
             log_trade(trade_data)
 
@@ -1191,7 +1210,7 @@ def run_strategy(alice):
             status_tracker.display_status()
 
             # ✅ FIXED: Check if we're at a 5-minute candle close
-            current_time = datetime.now()
+            current_time = now_ist()
             current_minute = current_time.minute
             current_second = current_time.second
 
@@ -1266,7 +1285,7 @@ def main():
     logger.info("✅ Now scans at 5-min candle closes (9:35, 9:40, 9:45...)")
     logger.info("✅ All validation uses 5-min timeframe data")
     logger.info("=" * 80)
-    logger.info(f"📅 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(f"📅 {now_ist().strftime('%Y-%m-%d %H:%M:%S')}")
 
     # Load CSV configuration if available
     Config.load_from_csv()
