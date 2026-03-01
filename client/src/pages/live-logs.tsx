@@ -396,7 +396,16 @@ export default function LiveLogsPage() {
               {logs.map((line, i) => (
                 <div key={i} className="flex gap-2 py-px">
                   <span className="text-muted-foreground whitespace-nowrap flex-shrink-0 select-none tabular-nums">
-                    {new Date(line.timestamp).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
+                    {(() => {
+                      const ts = line.timestamp;
+                      const timePart = ts.includes("T") ? ts.split("T")[1].split("+")[0].split("-")[0] : "";
+                      if (!timePart) return ts;
+                      const [hStr, mStr, sStr] = timePart.split(":");
+                      const h = parseInt(hStr, 10);
+                      const ampm = h >= 12 ? "PM" : "AM";
+                      const h12 = h % 12 || 12;
+                      return `${h12}:${mStr}:${sStr} ${ampm}`;
+                    })()}
                   </span>
                   <span className={`whitespace-nowrap flex-shrink-0 font-semibold w-8 text-center select-none ${getLevelColor(line.level)}`}>
                     {getLevelLabel(line.level)}

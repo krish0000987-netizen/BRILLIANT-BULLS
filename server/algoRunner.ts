@@ -84,9 +84,22 @@ class AlgoRunner {
     }
   }
 
+  private getISTTimestamp(): string {
+    const now = new Date();
+    const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+    const ist = new Date(utcMs + 5.5 * 3600000);
+    const y = ist.getFullYear();
+    const mo = String(ist.getMonth() + 1).padStart(2, "0");
+    const d = String(ist.getDate()).padStart(2, "0");
+    const h = String(ist.getHours()).padStart(2, "0");
+    const mi = String(ist.getMinutes()).padStart(2, "0");
+    const s = String(ist.getSeconds()).padStart(2, "0");
+    return `${y}-${mo}-${d}T${h}:${mi}:${s}+05:30`;
+  }
+
   private addLog(level: string, message: string) {
     const line: LogLine = {
-      timestamp: new Date().toISOString(),
+      timestamp: this.getISTTimestamp(),
       level,
       message,
     };
