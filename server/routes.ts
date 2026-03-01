@@ -778,6 +778,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/algo/upload-config", isAuthenticated, requireSubscription as any, upload.single("file") as any, async (req: AuthRequest, res: Response) => {
     try {
+      const user = (req as any).user;
+      const isAdmin = user?.role === "admin" || user?.role === "manager";
+      if (!isAdmin) {
+        const ist = getISTDate();
+        const hour = ist.getHours();
+        const day = ist.getDay();
+        if (day === 0 || day === 6) {
+          return res.status(400).json({ message: "CSV upload is not available on weekends (Mon-Fri only)." });
+        }
+        if (hour < 8) {
+          return res.status(400).json({ message: "CSV upload is available from 8:00 AM IST onwards." });
+        }
+      }
+
       if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
       const content = req.file.buffer.toString("utf-8");

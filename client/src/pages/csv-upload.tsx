@@ -15,6 +15,7 @@ interface AlgoStatus {
   csvExists: boolean;
   tradingHoursActive: boolean;
   tradingHoursMessage: string;
+  currentIST: string;
 }
 
 const EXPECTED_COLUMNS = [
@@ -290,7 +291,13 @@ export default function CsvUploadPage() {
 
       <Card className="p-4">
         <div className="text-xs text-muted-foreground space-y-1">
-          <p className="font-medium">Schedule Info (Mon-Fri IST):</p>
+          <div className="flex items-center justify-between">
+            <p className="font-medium">Schedule Info (Mon-Fri IST):</p>
+            {algoStatus?.currentIST && (
+              <Badge variant="outline" className="text-xs">🕐 {algoStatus.currentIST}</Badge>
+            )}
+          </div>
+          <p>CSV upload available from 8:00 AM IST (Admin: anytime)</p>
           <p>Live Mode auto-starts at 9:15 AM</p>
           <p>Test Mode auto-starts at 9:30 AM</p>
           <p>Algorithm auto-stops at 3:10 PM</p>
