@@ -297,7 +297,7 @@ export default function CsvUploadPage() {
               <Badge variant="outline" className="text-xs">🕐 {algoStatus.currentIST}</Badge>
             )}
           </div>
-          <p>CSV upload available from 8:00 AM IST (Admin: anytime)</p>
+          <p>CSV upload available anytime for all users</p>
           <p>Live Mode auto-starts at 9:15 AM</p>
           <p>Test Mode auto-starts at 9:30 AM</p>
           <p>Algorithm auto-stops at 3:10 PM</p>
