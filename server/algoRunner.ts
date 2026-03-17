@@ -1,7 +1,6 @@
 import { spawn, ChildProcess } from "child_process";
 import path from "path";
 import fs from "fs";
-import os from "os";
 import * as cron from "node-cron";
 import { storage } from "./storage";
 
@@ -37,128 +36,69 @@ const STDLIB_MODULES = new Set([
 ]);
 
 const IMPORT_MAPPING: Record<string, string> = {
-  PIL: "pillow",
-  cv2: "opencv-python",
-  sklearn: "scikit-learn",
-  bs4: "beautifulsoup4",
-  yaml: "pyyaml",
-  dotenv: "python-dotenv",
-  dateutil: "python-dateutil",
-  Crypto: "pycryptodome",
-  OpenSSL: "pyOpenSSL",
-  jwt: "PyJWT",
-  requests_html: "requests-html",
-  telegram: "python-telegram-bot",
-  flask: "Flask",
-  django: "Django",
-  fastapi: "fastapi",
-  uvicorn: "uvicorn",
-  sqlalchemy: "SQLAlchemy",
-  alembic: "alembic",
-  celery: "celery",
-  redis: "redis",
-  pymongo: "pymongo",
-  psycopg2: "psycopg2-binary",
-  boto3: "boto3",
-  paramiko: "paramiko",
-  fabric: "fabric",
-  scrapy: "Scrapy",
-  selenium: "selenium",
-  playwright: "playwright",
-  aiohttp: "aiohttp",
-  httpx: "httpx",
-  arrow: "arrow",
-  pendulum: "pendulum",
-  freezegun: "freezegun",
-  tzlocal: "tzlocal",
-  pytz: "pytz",
-  tabulate: "tabulate",
-  rich: "rich",
-  click: "click",
-  typer: "typer",
-  pydantic: "pydantic",
-  marshmallow: "marshmallow",
-  cerberus: "Cerberus",
-  attrs: "attrs",
-  attr: "attrs",
-  tqdm: "tqdm",
-  loguru: "loguru",
-  structlog: "structlog",
-  colorama: "colorama",
-  termcolor: "termcolor",
-  prettytable: "prettytable",
-  xlrd: "xlrd",
-  xlwt: "xlwt",
-  openpyxl: "openpyxl",
-  xlsxwriter: "XlsxWriter",
-  pandas: "pandas",
-  numpy: "numpy",
-  scipy: "scipy",
-  matplotlib: "matplotlib",
-  seaborn: "seaborn",
-  plotly: "plotly",
-  bokeh: "bokeh",
-  dash: "dash",
-  streamlit: "streamlit",
-  torch: "torch",
-  tensorflow: "tensorflow",
-  keras: "keras",
-  transformers: "transformers",
-  nltk: "nltk",
-  spacy: "spacy",
-  gensim: "gensim",
-  fitz: "PyMuPDF",
-  docx: "python-docx",
-  pptx: "python-pptx",
-  qrcode: "qrcode",
-  barcode: "python-barcode",
-  reportlab: "reportlab",
-  paramiko: "paramiko",
-  AliceBlue: "pya3",
-  alice_blue: "pya3",
-  pya3: "pya3",
+  PIL: "pillow", cv2: "opencv-python", sklearn: "scikit-learn",
+  bs4: "beautifulsoup4", yaml: "pyyaml", dotenv: "python-dotenv",
+  dateutil: "python-dateutil", Crypto: "pycryptodome", OpenSSL: "pyOpenSSL",
+  jwt: "PyJWT", requests_html: "requests-html", telegram: "python-telegram-bot",
+  flask: "Flask", django: "Django", fastapi: "fastapi", uvicorn: "uvicorn",
+  sqlalchemy: "SQLAlchemy", alembic: "alembic", celery: "celery",
+  redis: "redis", pymongo: "pymongo", psycopg2: "psycopg2-binary",
+  boto3: "boto3", paramiko: "paramiko", fabric: "fabric", scrapy: "Scrapy",
+  selenium: "selenium", playwright: "playwright", aiohttp: "aiohttp",
+  httpx: "httpx", arrow: "arrow", pendulum: "pendulum", freezegun: "freezegun",
+  tzlocal: "tzlocal", pytz: "pytz", tabulate: "tabulate", rich: "rich",
+  click: "click", typer: "typer", pydantic: "pydantic",
+  marshmallow: "marshmallow", attrs: "attrs", cattrs: "cattrs",
+  dacite: "dacite", orjson: "orjson", ujson: "ujson", simplejson: "simplejson",
+  toml: "toml", dotenv_values: "python-dotenv", decouple: "python-decouple",
+  dynaconf: "dynaconf", cerberus: "Cerberus", voluptuous: "voluptuous",
+  cerberus2: "cerberus", pya3: "pya3", alice_blue: "pya3",
+  talib: "TA-Lib", pandas_ta: "pandas_ta", mplfinance: "mplfinance",
+  yfinance: "yfinance", nsepy: "nsepy", jugaad_trader: "jugaad-trader",
+  kiteconnect: "kiteconnect", fyers_apiv3: "fyers-apiv3",
+  breeze_connect: "breeze-connect", smartapi: "smartapi-python",
+  NorenRestApiPy: "NorenRestApiPy", py5paisa: "py5paisa",
+  upstox_client: "upstox-python-sdk",
 };
 
 export function extractImports(code: string): string[] {
   const imports = new Set<string>();
-  const lines = code.split("\n");
-  for (const line of lines) {
+  for (const line of code.split("\n")) {
     const trimmed = line.trim();
-    const importMatch = trimmed.match(/^import\s+([a-zA-Z_][a-zA-Z0-9_.]*)/);
+    const importMatch = trimmed.match(/^import\s+([a-zA-Z_][a-zA-Z0-9_]*)/);
     if (importMatch) {
       const pkg = importMatch[1].split(".")[0];
-      if (!STDLIB_MODULES.has(pkg)) {
-        imports.add(IMPORT_MAPPING[pkg] || pkg);
-      }
+      if (!STDLIB_MODULES.has(pkg)) imports.add(IMPORT_MAPPING[pkg] || pkg);
     }
     const fromMatch = trimmed.match(/^from\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+import/);
     if (fromMatch && !trimmed.startsWith("from .") && !trimmed.startsWith("from __")) {
       const pkg = fromMatch[1].split(".")[0];
-      if (!STDLIB_MODULES.has(pkg)) {
-        imports.add(IMPORT_MAPPING[pkg] || pkg);
-      }
+      if (!STDLIB_MODULES.has(pkg)) imports.add(IMPORT_MAPPING[pkg] || pkg);
     }
   }
   return Array.from(imports);
 }
 
+// ─── Per-user AlgoRunner ────────────────────────────────────────────────────
+
 class AlgoRunner {
+  private userId: string;
   private process: ChildProcess | null = null;
   private logBuffer: LogLine[] = [];
   private maxBufferSize = 2000;
   private listeners: Set<LogListener> = new Set();
-  private _status: "idle" | "running" | "stopping" | "scheduled" = "idle";
+  private _status: "idle" | "running" | "stopping" = "idle";
   private _mode: "live" | "test" = "live";
   private startedAt: Date | null = null;
-  private cronJobs: any[] = [];
-  private scheduledJobsInitialized = false;
-  private _installingDeps = false;
+
+  constructor(userId: string) {
+    this.userId = userId;
+  }
 
   get status() { return this._status; }
   get isRunning() { return this.process !== null && this._status === "running"; }
   get logs() { return [...this.logBuffer]; }
   get mode() { return this._mode; }
-  get installingDeps() { return this._installingDeps; }
 
   get runInfo() {
     return {
@@ -168,143 +108,31 @@ class AlgoRunner {
       startedAt: this.startedAt?.toISOString() || null,
       logCount: this.logBuffer.length,
       csvExists: this.csvExists(),
-      scriptInfo: this.getScriptInfo(),
-      installingDeps: this._installingDeps,
+      scriptInfo: algoManager.getScriptInfo(),
+      installingDeps: algoManager.installingDeps,
     };
   }
 
-  private getConfigDir(): string {
-    return path.join(os.homedir(), ".aliceblue_orb_simple");
-  }
-
-  private getConfigPath(): string {
-    return path.join(this.getConfigDir(), "config.csv");
-  }
-
   getUserAlgoDir(): string {
-    return path.join(process.cwd(), "server", "algo");
-  }
-
-  getUserAlgoPath(): string {
-    return path.join(this.getUserAlgoDir(), "user_algo.py");
-  }
-
-  private getAlgoPath(): string {
-    const userAlgo = this.getUserAlgoPath();
-    if (fs.existsSync(userAlgo)) return userAlgo;
-    return path.join(this.getUserAlgoDir(), "alice_blue_trail_enhanced.py");
-  }
-
-  getScriptInfo(): { hasUserScript: boolean; scriptName: string; size: number; imports: string[] } {
-    const userAlgoPath = this.getUserAlgoPath();
-    if (fs.existsSync(userAlgoPath)) {
-      const stats = fs.statSync(userAlgoPath);
-      const code = fs.readFileSync(userAlgoPath, "utf-8");
-      return { hasUserScript: true, scriptName: "user_algo.py", size: stats.size, imports: extractImports(code) };
-    }
-    const defaultPath = path.join(this.getUserAlgoDir(), "alice_blue_trail_enhanced.py");
-    if (fs.existsSync(defaultPath)) {
-      const stats = fs.statSync(defaultPath);
-      const code = fs.readFileSync(defaultPath, "utf-8");
-      return { hasUserScript: false, scriptName: "alice_blue_trail_enhanced.py", size: stats.size, imports: extractImports(code) };
-    }
-    return { hasUserScript: false, scriptName: "none", size: 0, imports: [] };
-  }
-
-  saveScript(code: string): void {
-    const dir = this.getUserAlgoDir();
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    const header = `# ============================================================\n# IST Timezone is automatically applied via TZ=Asia/Kolkata\n# All datetime.now() calls will return Indian Standard Time\n# ============================================================\n\n`;
-    fs.writeFileSync(this.getUserAlgoPath(), header + code, "utf-8");
-    this.addLog("info", "User algorithm script saved successfully");
-  }
-
-  deleteUserScript(): void {
-    const p = this.getUserAlgoPath();
-    if (fs.existsSync(p)) {
-      fs.unlinkSync(p);
-      this.addLog("info", "User algorithm script deleted");
-    }
-  }
-
-  async installDependencies(): Promise<{ success: boolean; installed: string[]; failed: string[]; skipped: string[] }> {
-    const info = this.getScriptInfo();
-    const packages = info.imports;
-
-    if (packages.length === 0) {
-      return { success: true, installed: [], failed: [], skipped: [] };
-    }
-
-    this._installingDeps = true;
-    this.addLog("info", `[DEPS] Installing ${packages.length} detected package(s): ${packages.join(", ")}`);
-
-    const installed: string[] = [];
-    const failed: string[] = [];
-    const skipped: string[] = [];
-
-    for (const pkg of packages) {
-      const result = await new Promise<{ success: boolean; output: string }>((resolve) => {
-        const proc = spawn("python3", ["-m", "pip", "install", "-q", pkg], {
-          env: { ...process.env },
-          stdio: ["ignore", "pipe", "pipe"],
-        });
-        let output = "";
-        proc.stdout?.on("data", (d: Buffer) => { output += d.toString(); });
-        proc.stderr?.on("data", (d: Buffer) => { output += d.toString(); });
-        proc.on("close", (code) => resolve({ success: code === 0, output: output.trim() }));
-        proc.on("error", (err) => resolve({ success: false, output: err.message }));
-      });
-
-      if (result.success) {
-        if (result.output.includes("already satisfied")) {
-          this.addLog("info", `[DEPS] ✓ ${pkg} already installed`);
-          skipped.push(pkg);
-        } else {
-          this.addLog("info", `[DEPS] ✓ Installed ${pkg}`);
-          installed.push(pkg);
-        }
-      } else {
-        this.addLog("error", `[DEPS] ✗ Failed to install ${pkg}: ${result.output.slice(0, 100)}`);
-        failed.push(pkg);
-      }
-    }
-
-    this._installingDeps = false;
-    this.addLog("info", `[DEPS] Done. Installed: ${installed.length}, Already had: ${skipped.length}, Failed: ${failed.length}`);
-    return { success: failed.length === 0, installed, failed, skipped };
+    return path.join(process.cwd(), "server", "algo_users", this.userId);
   }
 
   csvExists(): boolean {
-    return (
-      fs.existsSync(this.getConfigPath()) ||
-      fs.existsSync(path.join(this.getUserAlgoDir(), "config.csv"))
-    );
+    return fs.existsSync(path.join(this.getUserAlgoDir(), "config.csv"));
   }
 
   saveConfig(csvContent: string): void {
-    // Save to the hidden config dir (legacy)
-    const dir = this.getConfigDir();
+    const dir = this.getUserAlgoDir();
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(this.getConfigPath(), csvContent, "utf-8");
-
-    // Also save to algo directory so the script can read it as config.csv
-    const algoDir = this.getUserAlgoDir();
-    if (!fs.existsSync(algoDir)) fs.mkdirSync(algoDir, { recursive: true });
-    fs.writeFileSync(path.join(algoDir, "config.csv"), csvContent, "utf-8");
-
-    this.addLog("info", `CSV config saved to disk (${this.getConfigPath()}, ${path.join(algoDir, "config.csv")})`);
+    fs.writeFileSync(path.join(dir, "config.csv"), csvContent, "utf-8");
+    this.addLog("info", "CSV config saved successfully");
   }
 
   deleteConfig(): void {
-    const configPath = this.getConfigPath();
-    if (fs.existsSync(configPath)) {
-      fs.unlinkSync(configPath);
-      this.addLog("info", "CSV config deleted from disk");
-    }
-    // Also delete the copy in algo directory
-    const algoConfigPath = path.join(this.getUserAlgoDir(), "config.csv");
-    if (fs.existsSync(algoConfigPath)) {
-      fs.unlinkSync(algoConfigPath);
+    const p = path.join(this.getUserAlgoDir(), "config.csv");
+    if (fs.existsSync(p)) {
+      fs.unlinkSync(p);
+      this.addLog("info", "CSV config deleted");
     }
   }
 
@@ -321,13 +149,13 @@ class AlgoRunner {
     return `${y}-${mo}-${d}T${h}:${mi}:${s}+05:30`;
   }
 
-  private addLog(level: string, message: string) {
+  addLog(level: string, message: string) {
     const line: LogLine = { timestamp: this.getISTTimestamp(), level, message };
     this.logBuffer.push(line);
     if (this.logBuffer.length > this.maxBufferSize) {
       this.logBuffer = this.logBuffer.slice(-this.maxBufferSize);
     }
-    this.listeners.forEach((listener) => { try { listener(line); } catch {} });
+    this.listeners.forEach((l) => { try { l(line); } catch {} });
     storage.createAlgoLog({ level, message }).catch(() => {});
   }
 
@@ -347,63 +175,47 @@ class AlgoRunner {
     if (this.isRunning) return { success: false, message: "Algorithm is already running" };
     if (!this.csvExists()) return { success: false, message: "No CSV config uploaded. Please upload your config first." };
 
-    const algoPath = this.getAlgoPath();
-    if (!fs.existsSync(algoPath)) return { success: false, message: "Algorithm file not found. Please upload your Python script first." };
+    const sharedScript = algoManager.getSharedScriptPath();
+    if (!sharedScript) {
+      return { success: false, message: "No algorithm script found. Admin must upload a Python script first." };
+    }
+
+    const userDir = this.getUserAlgoDir();
+    if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
+
+    // Copy latest shared script into user's isolated directory
+    const scriptName = path.basename(sharedScript);
+    const userScriptPath = path.join(userDir, scriptName);
+    fs.copyFileSync(sharedScript, userScriptPath);
+
+    const algoConfigPath = path.join(userDir, "config.csv");
 
     this.logBuffer = [];
     const modeLabel = this._mode === "test" ? "[TEST MODE] " : "";
-    this.addLog("info", `${modeLabel}Starting algorithm: ${path.basename(algoPath)}`);
-    this.addLog("info", `Using config: ${path.join(this.getUserAlgoDir(), "config.csv")}`);
+    this.addLog("info", `${modeLabel}Starting algorithm: ${scriptName}`);
+    this.addLog("info", `Config: ${algoConfigPath}`);
     this._status = "running";
     this.startedAt = new Date();
 
-    const configPath = this.getConfigPath();
-    const algoConfigPath = path.join(this.getUserAlgoDir(), "config.csv");
-    const algoDir = this.getUserAlgoDir();
+    // IST bootstrap wrapper
+    const tzBootstrap = [
+      "import os,time,logging,runpy",
+      "os.environ['TZ']='Asia/Kolkata'",
+      "time.tzset()",
+      "def _fmt(self,record,datefmt=None):",
+      "  ct=time.localtime(record.created)",
+      "  if datefmt: return time.strftime(datefmt,ct)",
+      "  t=time.strftime(self.default_time_format,ct)",
+      "  return self.default_msec_format%(t,record.msecs)",
+      "logging.Formatter.formatTime=_fmt",
+      `runpy.run_path(r'${scriptName}',run_name='__main__')`,
+    ].join("\n");
 
-    // Ensure algo directory exists
-    if (!fs.existsSync(algoDir)) fs.mkdirSync(algoDir, { recursive: true });
-
-    // Sync config: copy from legacy path → algo dir, or vice versa
-    if (fs.existsSync(configPath) && !fs.existsSync(algoConfigPath)) {
-      fs.writeFileSync(algoConfigPath, fs.readFileSync(configPath, "utf-8"), "utf-8");
-      this.addLog("info", "Config synced from hidden dir → algo dir");
-    } else if (!fs.existsSync(configPath) && fs.existsSync(algoConfigPath)) {
-      const legacyDir = this.getConfigDir();
-      if (!fs.existsSync(legacyDir)) fs.mkdirSync(legacyDir, { recursive: true });
-      fs.writeFileSync(configPath, fs.readFileSync(algoConfigPath, "utf-8"), "utf-8");
-      this.addLog("info", "Config synced from algo dir → hidden dir");
-    }
-
-    this.addLog("info", `Config file at: ${algoConfigPath} (exists: ${fs.existsSync(algoConfigPath)})`);
-
-    const scriptName = path.basename(algoPath);
+    fs.writeFileSync(path.join(userDir, "_ist_runner.py"), tzBootstrap, "utf-8");
 
     try {
-      // IST bootstrap:
-      //   1. Set TZ env + tzset() so C-level time is IST
-      //   2. Monkey-patch logging.Formatter.formatTime to always use
-      //      time.localtime (IST) — overrides any script that does
-      //      Formatter.converter = time.gmtime internally
-      //   3. runpy.run_path() sets __file__/__name__ correctly (no NameError)
-      const tzBootstrap = [
-        "import os,time,logging,runpy",
-        "os.environ['TZ']='Asia/Kolkata'",
-        "time.tzset()",
-        "def _fmt(self,record,datefmt=None):",
-        "  ct=time.localtime(record.created)",
-        "  if datefmt: return time.strftime(datefmt,ct)",
-        "  t=time.strftime(self.default_time_format,ct)",
-        "  return self.default_msec_format%(t,record.msecs)",
-        "logging.Formatter.formatTime=_fmt",
-        `runpy.run_path(r'${scriptName}',run_name='__main__')`,
-      ].join("\n");
-
-      const wrapperPath = path.join(this.getUserAlgoDir(), "_ist_runner.py");
-      fs.writeFileSync(wrapperPath, tzBootstrap, "utf-8");
-
       this.process = spawn("python3", ["-u", "_ist_runner.py"], {
-        cwd: this.getUserAlgoDir(), // run script from its own directory
+        cwd: userDir,
         env: {
           ...process.env,
           PYTHONUNBUFFERED: "1",
@@ -413,7 +225,7 @@ class AlgoRunner {
           CONFIG_FILE: algoConfigPath,
           CONFIG_PATH: algoConfigPath,
           ALGO_CONFIG_FILE: "config.csv",
-          ALGO_CONFIG_DIR: this.getUserAlgoDir(),
+          ALGO_CONFIG_DIR: userDir,
         },
         stdio: ["ignore", "pipe", "pipe"],
       });
@@ -473,34 +285,140 @@ class AlgoRunner {
       return { success: false, message: `Failed to stop: ${err.message}` };
     }
   }
+}
+
+// ─── AlgoManager — manages all per-user runners + shared script ──────────────
+
+class AlgoManager {
+  private runners = new Map<string, AlgoRunner>();
+  private schedulerInitialized = false;
+  installingDeps = false;
+
+  getRunner(userId: string): AlgoRunner {
+    if (!this.runners.has(userId)) {
+      this.runners.set(userId, new AlgoRunner(userId));
+    }
+    return this.runners.get(userId)!;
+  }
+
+  getAllRunnersInfo(): { userId: string; info: ReturnType<AlgoRunner["runInfo"]> }[] {
+    return Array.from(this.runners.entries()).map(([userId, runner]) => ({
+      userId,
+      info: runner.runInfo,
+    }));
+  }
+
+  getSharedScriptDir(): string {
+    return path.join(process.cwd(), "server", "algo");
+  }
+
+  getSharedScriptPath(): string | null {
+    const dir = this.getSharedScriptDir();
+    const userAlgo = path.join(dir, "user_algo.py");
+    if (fs.existsSync(userAlgo)) return userAlgo;
+    const fallback = path.join(dir, "alice_blue_trail_enhanced.py");
+    if (fs.existsSync(fallback)) return fallback;
+    return null;
+  }
+
+  getScriptInfo(): { hasUserScript: boolean; scriptName: string; size: number; imports: string[] } {
+    const p = this.getSharedScriptPath();
+    if (!p) return { hasUserScript: false, scriptName: "none", size: 0, imports: [] };
+    const stats = fs.statSync(p);
+    const code = fs.readFileSync(p, "utf-8");
+    const isUser = path.basename(p) === "user_algo.py";
+    return { hasUserScript: isUser, scriptName: path.basename(p), size: stats.size, imports: extractImports(code) };
+  }
+
+  saveScript(code: string): void {
+    const dir = this.getSharedScriptDir();
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const header = `# ============================================================\n# IST Timezone is automatically applied via TZ=Asia/Kolkata\n# All datetime.now() calls will return Indian Standard Time\n# ============================================================\n\n`;
+    fs.writeFileSync(path.join(dir, "user_algo.py"), header + code, "utf-8");
+  }
+
+  getScriptContent(): string | null {
+    const p = this.getSharedScriptPath();
+    return p ? fs.readFileSync(p, "utf-8") : null;
+  }
+
+  deleteScript(): void {
+    const p = path.join(this.getSharedScriptDir(), "user_algo.py");
+    if (fs.existsSync(p)) fs.unlinkSync(p);
+  }
+
+  async installDependencies(): Promise<{ success: boolean; installed: string[]; failed: string[]; skipped: string[] }> {
+    const info = this.getScriptInfo();
+    const packages = info.imports;
+    if (packages.length === 0) return { success: true, installed: [], failed: [], skipped: [] };
+
+    this.installingDeps = true;
+    const installed: string[] = [];
+    const failed: string[] = [];
+    const skipped: string[] = [];
+
+    for (const pkg of packages) {
+      const result = await new Promise<{ success: boolean; output: string }>((resolve) => {
+        const proc = spawn("python3", ["-m", "pip", "install", "-q", pkg], {
+          env: { ...process.env },
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+        let output = "";
+        proc.stdout?.on("data", (d: Buffer) => { output += d.toString(); });
+        proc.stderr?.on("data", (d: Buffer) => { output += d.toString(); });
+        proc.on("close", (code) => resolve({ success: code === 0, output: output.trim() }));
+        proc.on("error", (err) => resolve({ success: false, output: err.message }));
+      });
+
+      if (result.success) {
+        if (result.output.includes("already satisfied")) skipped.push(pkg);
+        else installed.push(pkg);
+      } else {
+        failed.push(pkg);
+      }
+    }
+
+    this.installingDeps = false;
+    return { success: failed.length === 0, installed, failed, skipped };
+  }
 
   setupScheduledJobs() {
-    if (this.scheduledJobsInitialized) return;
-    this.scheduledJobsInitialized = true;
-    for (const job of this.cronJobs) job.stop();
-    this.cronJobs = [];
+    if (this.schedulerInitialized) return;
+    this.schedulerInitialized = true;
 
-    const startJob = cron.schedule("45 8 * * 1-5", () => {
-      this.addLog("info", "[SCHEDULER] Auto-starting algorithm at 8:45 AM IST (Live Mode)");
-      if (this.csvExists()) this.start(true);
-      else this.addLog("warning", "[SCHEDULER] No CSV config found, skipping auto-start");
+    // Auto-start all users with valid CSV at 8:45 AM IST (live mode)
+    cron.schedule("45 8 * * 1-5", () => {
+      for (const [, runner] of this.runners) {
+        if (runner.csvExists() && !runner.isRunning) runner.start(true);
+      }
     }, { timezone: "Asia/Kolkata" });
 
-    const testStartJob = cron.schedule("30 9 * * 1-5", () => {
-      this.addLog("info", "[SCHEDULER] Auto-starting algorithm at 9:30 AM IST (Test Mode)");
-      if (this.csvExists()) this.startTest();
-      else this.addLog("warning", "[SCHEDULER] No CSV config found, skipping test mode auto-start");
+    // Auto-stop all at 3:30 PM IST
+    cron.schedule("30 15 * * 1-5", () => {
+      for (const [, runner] of this.runners) {
+        if (runner.isRunning) runner.stop();
+      }
     }, { timezone: "Asia/Kolkata" });
-
-    const stopJob = cron.schedule("30 15 * * 1-5", () => {
-      this.addLog("info", "[SCHEDULER] Auto-stopping algorithm at 3:30 PM IST");
-      this.stop();
-    }, { timezone: "Asia/Kolkata" });
-
-    // CSV config is kept until manually deleted by the user via the UI
-    this.cronJobs.push(startJob, testStartJob, stopJob);
-    this.addLog("info", "Scheduled jobs configured: Live Start 8:45 AM, Test Start 9:30 AM, Auto-stop 3:30 PM (Mon-Fri IST)");
   }
 }
 
-export const algoRunner = new AlgoRunner();
+export const algoManager = new AlgoManager();
+
+// Legacy export for any remaining references
+export const algoRunner = {
+  get runInfo() { return algoManager.getRunner("admin").runInfo; },
+  get logs() { return algoManager.getRunner("admin").logs; },
+  addListener: (fn: LogListener) => algoManager.getRunner("admin").addListener(fn),
+  start: (asLive?: boolean) => algoManager.getRunner("admin").start(asLive),
+  startTest: () => algoManager.getRunner("admin").startTest(),
+  stop: () => algoManager.getRunner("admin").stop(),
+  csvExists: () => algoManager.getRunner("admin").csvExists(),
+  saveConfig: (csv: string) => algoManager.getRunner("admin").saveConfig(csv),
+  deleteConfig: () => algoManager.getRunner("admin").deleteConfig(),
+  getUserAlgoDir: () => algoManager.getRunner("admin").getUserAlgoDir(),
+  getScriptInfo: () => algoManager.getScriptInfo(),
+  saveScript: (code: string) => algoManager.saveScript(code),
+  deleteUserScript: () => algoManager.deleteScript(),
+  installDependencies: () => algoManager.installDependencies(),
+  setupScheduledJobs: () => algoManager.setupScheduledJobs(),
+};

@@ -10,7 +10,7 @@ import bcrypt from "bcrypt";
 import { encrypt, decrypt } from "./encryption";
 import { setupAuth, isAuthenticated, isAdmin } from "./replit_integrations/auth/replitAuth";
 import { registerAuthRoutes } from "./replit_integrations/auth/routes";
-import { algoRunner, extractImports } from "./algoRunner";
+import { algoManager, extractImports } from "./algoRunner";
 import fs from "fs";
 
 interface AuthRequest extends Request {
@@ -716,41 +716,47 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   // ── Algorithm Runner Routes ───────────────────────────────────────────
 
-  algoRunner.setupScheduledJobs();
+  algoManager.setupScheduledJobs();
 
   app.get("/api/algo/status", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    const userId = getUserId(req);
+    const runner = algoManager.getRunner(userId);
     const timeCheck = isWithinISTTradingHours();
     const istTimeStr = formatISTTime(getISTDate());
-    res.json({ ...algoRunner.runInfo, tradingHoursActive: timeCheck.allowed, tradingHoursMessage: timeCheck.message, currentIST: istTimeStr });
+    res.json({ ...runner.runInfo, tradingHoursActive: timeCheck.allowed, tradingHoursMessage: timeCheck.message, currentIST: istTimeStr });
   });
 
   app.post("/api/algo/start", isAuthenticated, requireSubscription as any, async (req: AuthRequest, res: Response) => {
     const timeCheck = isWithinISTTradingHours();
-    if (!timeCheck.allowed) {
-      return res.json({ success: false, message: timeCheck.message });
-    }
-    const result = algoRunner.start(true);
-    await logAudit(getUserId(req), "Algorithm started (live)", "algo", req, result.success ? "info" : "warning", result.message);
+    if (!timeCheck.allowed) return res.json({ success: false, message: timeCheck.message });
+    const userId = getUserId(req);
+    const result = algoManager.getRunner(userId).start(true);
+    await logAudit(userId, "Algorithm started (live)", "algo", req, result.success ? "info" : "warning", result.message);
     res.json(result);
   });
 
   app.post("/api/algo/start-test", isAuthenticated, async (req: AuthRequest, res: Response) => {
-    const result = algoRunner.startTest();
-    await logAudit(getUserId(req), "Algorithm started (test mode)", "algo", req, result.success ? "info" : "warning", result.message);
+    const userId = getUserId(req);
+    const result = algoManager.getRunner(userId).startTest();
+    await logAudit(userId, "Algorithm started (test mode)", "algo", req, result.success ? "info" : "warning", result.message);
     res.json(result);
   });
 
   app.post("/api/algo/stop", isAuthenticated, async (req: AuthRequest, res: Response) => {
-    const result = algoRunner.stop();
-    await logAudit(getUserId(req), "Algorithm stopped", "algo", req, "info", result.message);
+    const userId = getUserId(req);
+    const result = algoManager.getRunner(userId).stop();
+    await logAudit(userId, "Algorithm stopped", "algo", req, "info", result.message);
     res.json(result);
   });
 
   app.get("/api/algo/logs", isAuthenticated, async (req: AuthRequest, res: Response) => {
-    res.json(algoRunner.logs);
+    res.json(algoManager.getRunner(getUserId(req)).logs);
   });
 
   app.get("/api/algo/logs/stream", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    const userId = getUserId(req);
+    const runner = algoManager.getRunner(userId);
+
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
@@ -759,12 +765,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     });
     res.flushHeaders();
 
-    const existingLogs = algoRunner.logs;
-    for (const log of existingLogs) {
+    for (const log of runner.logs) {
       res.write(`data: ${JSON.stringify(log)}\n\n`);
     }
 
-    const remove = algoRunner.addListener((line) => {
+    const remove = runner.addListener((line) => {
       try { res.write(`data: ${JSON.stringify(line)}\n\n`); } catch {}
     });
 
@@ -794,28 +799,30 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ message: "CSV must have at least 3 columns" });
       }
 
+      const userId = getUserId(req);
       const configContent = lines.slice(0, 2).join("\n");
-      algoRunner.saveConfig(configContent);
+      const runner = algoManager.getRunner(userId);
+      runner.saveConfig(configContent);
 
       const { encrypted, iv, authTag } = encrypt(configContent);
       await storage.createCsvConfig({
-        userId: getUserId(req),
+        userId,
         fileName: req.file.originalname,
         encryptedContent: encrypted,
         iv,
         authTag,
       });
 
-      await logAudit(getUserId(req), `Algo CSV config uploaded: ${req.file.originalname}`, "config", req);
+      await logAudit(userId, `Algo CSV config uploaded: ${req.file.originalname}`, "config", req);
 
       // Auto-start algo if within trading hours and not already running
       let autoStarted = false;
       const timeCheck = isWithinISTTradingHours();
-      if (timeCheck.allowed && !algoRunner.isRunning) {
-        const startResult = algoRunner.start(true);
+      if (timeCheck.allowed && !runner.isRunning) {
+        const startResult = runner.start(true);
         if (startResult.success) {
           autoStarted = true;
-          await logAudit(getUserId(req), "Algo auto-started after CSV upload", "algo", req);
+          await logAudit(userId, "Algo auto-started after CSV upload", "algo", req);
         }
       }
 
@@ -832,15 +839,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.delete("/api/algo/config", isAuthenticated, async (req: AuthRequest, res: Response) => {
-    algoRunner.deleteConfig();
-    await logAudit(getUserId(req), "Algo CSV config deleted", "config", req);
+    const userId = getUserId(req);
+    algoManager.getRunner(userId).deleteConfig();
+    await logAudit(userId, "Algo CSV config deleted", "config", req);
     res.json({ success: true, message: "Config deleted" });
   });
 
-  // ── Algorithm Script Management ───────────────────────────────────────
+  // ── Algorithm Script Management (admin-only, shared script) ──────────────
 
   app.get("/api/algo/script-info", isAuthenticated, (_req: AuthRequest, res: Response) => {
-    res.json(algoRunner.getScriptInfo());
+    res.json(algoManager.getScriptInfo());
   });
 
   app.post("/api/algo/upload-script", isAuthenticated, isAdmin, upload.single("file") as any, async (req: AuthRequest, res: Response) => {
@@ -850,9 +858,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ message: "Only .py files are accepted" });
       }
       const code = req.file.buffer.toString("utf-8");
-      algoRunner.saveScript(code);
+      algoManager.saveScript(code);
       await logAudit(getUserId(req), `Algo script uploaded: ${req.file.originalname}`, "algo", req);
-      res.json({ success: true, message: "Algorithm script uploaded successfully", scriptInfo: algoRunner.getScriptInfo() });
+      res.json({ success: true, message: "Algorithm script uploaded successfully", scriptInfo: algoManager.getScriptInfo() });
     } catch (err: any) {
       res.status(500).json({ message: "Failed to upload script" });
     }
@@ -864,9 +872,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (!code || typeof code !== "string" || code.trim().length === 0) {
         return res.status(400).json({ message: "Python code is required" });
       }
-      algoRunner.saveScript(code);
+      algoManager.saveScript(code);
       await logAudit(getUserId(req), "Algo script saved (pasted code)", "algo", req);
-      res.json({ success: true, message: "Algorithm script saved successfully", scriptInfo: algoRunner.getScriptInfo() });
+      res.json({ success: true, message: "Algorithm script saved successfully", scriptInfo: algoManager.getScriptInfo() });
     } catch (err: any) {
       res.status(500).json({ message: "Failed to save script" });
     }
@@ -874,9 +882,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/algo/script-content", isAuthenticated, isAdmin, (_req: AuthRequest, res: Response) => {
     try {
-      const p = algoRunner.getUserAlgoPath();
-      if (!fs.existsSync(p)) return res.status(404).json({ message: "No user script found" });
-      const content = fs.readFileSync(p, "utf-8");
+      const content = algoManager.getScriptContent();
+      if (!content) return res.status(404).json({ message: "No script found" });
       res.json({ content });
     } catch {
       res.status(500).json({ message: "Failed to read script" });
@@ -884,17 +891,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.delete("/api/algo/script", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
-    algoRunner.deleteUserScript();
+    algoManager.deleteScript();
     await logAudit(getUserId(req), "Algo user script deleted", "algo", req, "warning");
-    res.json({ success: true, message: "User script deleted. Default script will be used." });
+    res.json({ success: true, message: "User script deleted." });
   });
 
   app.post("/api/algo/install-deps", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
-    if (algoRunner.installingDeps) {
+    if (algoManager.installingDeps) {
       return res.status(409).json({ message: "Dependency installation already in progress" });
     }
     try {
-      const result = await algoRunner.installDependencies();
+      const result = await algoManager.installDependencies();
       await logAudit(getUserId(req), `Installed algo deps: ${result.installed.join(",")}`, "algo", req);
       res.json(result);
     } catch (err: any) {
