@@ -24,6 +24,7 @@ import {
   Terminal,
   CreditCard,
   LayoutDashboard,
+  FileCode,
 } from "lucide-react";
 
 const navItems = [
@@ -31,6 +32,10 @@ const navItems = [
   { title: "CSV Upload", url: "/csv-upload", icon: FileSpreadsheet },
   { title: "Subscription", url: "/subscription", icon: CreditCard },
   { title: "Settings", url: "/settings", icon: Settings },
+];
+
+const adminNavItems = [
+  { title: "Algo Manager", url: "/algo-manager", icon: FileCode },
 ];
 
 const adminItems = [
@@ -95,6 +100,34 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Tools</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminNavItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      data-active={location === item.url}
+                      className={location === item.url ? "bg-sidebar-accent" : ""}
+                    >
+                      <a
+                        href={item.url}
+                        onClick={(e) => { e.preventDefault(); navigate(item.url); }}
+                        data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {isAdmin && (
           <SidebarGroup>

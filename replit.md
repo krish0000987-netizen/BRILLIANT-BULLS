@@ -4,6 +4,14 @@
 Enterprise-grade security and authentication wrapper system for an existing Python trading SaaS application (alice_blue_trail_enhanced.py). The wrapper provides authentication, encryption, device management, audit logging, subscription management, and configuration management without modifying the original trading code.
 
 ## Recent Changes
+- 2026-03-17: Added Algo Manager page with Python script upload, paste, auto-install
+  - Upload .py file or paste Python code directly in the browser
+  - IST timezone (TZ=Asia/Kolkata) auto-injected when running the algo
+  - Auto-detects 3rd-party imports and runs pip install for all dependencies
+  - Admin-only: upload, save, delete script; all users can view script info
+  - Script stored at server/algo/user_algo.py (overrides default)
+  - New routes: GET/POST /api/algo/script-info, upload-script, save-script, install-deps, script-content
+- 2026-03-17: Migrated to Replit environment, seeded admin user on startup
 - 2026-02-22: Replaced Replit Auth with custom username/password authentication
   - bcrypt password hashing with express-session (connect-pg-simple)
   - Login rate limiting (10 attempts per 15 minutes)

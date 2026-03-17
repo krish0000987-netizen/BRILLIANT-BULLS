@@ -13,6 +13,134 @@ interface LogLine {
 
 type LogListener = (line: LogLine) => void;
 
+const STDLIB_MODULES = new Set([
+  "sys","os","re","json","csv","datetime","time","math","random","string","io",
+  "abc","collections","functools","itertools","operator","pathlib","shutil",
+  "subprocess","threading","multiprocessing","logging","unittest","typing","enum",
+  "dataclasses","copy","pickle","struct","socket","ssl","http","urllib","email",
+  "html","xml","sqlite3","hashlib","hmac","secrets","base64","binascii","codecs",
+  "unicodedata","locale","gettext","argparse","configparser","tempfile","glob",
+  "fnmatch","linecache","traceback","inspect","ast","dis","pprint","warnings",
+  "contextlib","weakref","gc","signal","errno","ctypes","array","queue","heapq",
+  "bisect","decimal","fractions","statistics","cmath","numbers","builtins",
+  "platform","stat","uuid","textwrap","difflib","calendar","getopt","cmd","code",
+  "codeop","zipfile","tarfile","gzip","bz2","lzma","zlib","importlib","pkgutil",
+  "runpy","site","sysconfig","token","tokenize","keyword","asyncio","concurrent",
+  "selectors","types","copyreg","shelve","shlex","sched","atexit","pdb","doctest",
+  "unittest","tkinter","turtle","idlelib","venv","zoneinfo","tomllib","_thread",
+  "faulthandler","tracemalloc","timeit","cProfile","profile","pstats","trace",
+  "filecmp","fileinput","tempfile","glob","fnmatch","readline","rlcompleter",
+  "netrc","ipaddress","smtplib","ftplib","imaplib","poplib","telnetlib","nntplib",
+  "xmlrpc","wsgiref","mimetypes","webbrowser","mailbox","sndhdr","audioop","wave",
+  "sunau","aifc","chunk","ossaudiodev","posix","grp","pwd","pty","tty","fcntl",
+  "termios","resource","syslog","nis","spwd","crypt","curses",
+]);
+
+const IMPORT_MAPPING: Record<string, string> = {
+  PIL: "pillow",
+  cv2: "opencv-python",
+  sklearn: "scikit-learn",
+  bs4: "beautifulsoup4",
+  yaml: "pyyaml",
+  dotenv: "python-dotenv",
+  dateutil: "python-dateutil",
+  Crypto: "pycryptodome",
+  OpenSSL: "pyOpenSSL",
+  jwt: "PyJWT",
+  requests_html: "requests-html",
+  telegram: "python-telegram-bot",
+  flask: "Flask",
+  django: "Django",
+  fastapi: "fastapi",
+  uvicorn: "uvicorn",
+  sqlalchemy: "SQLAlchemy",
+  alembic: "alembic",
+  celery: "celery",
+  redis: "redis",
+  pymongo: "pymongo",
+  psycopg2: "psycopg2-binary",
+  boto3: "boto3",
+  paramiko: "paramiko",
+  fabric: "fabric",
+  scrapy: "Scrapy",
+  selenium: "selenium",
+  playwright: "playwright",
+  aiohttp: "aiohttp",
+  httpx: "httpx",
+  arrow: "arrow",
+  pendulum: "pendulum",
+  freezegun: "freezegun",
+  tzlocal: "tzlocal",
+  pytz: "pytz",
+  tabulate: "tabulate",
+  rich: "rich",
+  click: "click",
+  typer: "typer",
+  pydantic: "pydantic",
+  marshmallow: "marshmallow",
+  cerberus: "Cerberus",
+  attrs: "attrs",
+  attr: "attrs",
+  tqdm: "tqdm",
+  loguru: "loguru",
+  structlog: "structlog",
+  colorama: "colorama",
+  termcolor: "termcolor",
+  prettytable: "prettytable",
+  xlrd: "xlrd",
+  xlwt: "xlwt",
+  openpyxl: "openpyxl",
+  xlsxwriter: "XlsxWriter",
+  pandas: "pandas",
+  numpy: "numpy",
+  scipy: "scipy",
+  matplotlib: "matplotlib",
+  seaborn: "seaborn",
+  plotly: "plotly",
+  bokeh: "bokeh",
+  dash: "dash",
+  streamlit: "streamlit",
+  torch: "torch",
+  tensorflow: "tensorflow",
+  keras: "keras",
+  transformers: "transformers",
+  nltk: "nltk",
+  spacy: "spacy",
+  gensim: "gensim",
+  fitz: "PyMuPDF",
+  docx: "python-docx",
+  pptx: "python-pptx",
+  qrcode: "qrcode",
+  barcode: "python-barcode",
+  reportlab: "reportlab",
+  paramiko: "paramiko",
+  AliceBlue: "alice-blue",
+  pya3: "pya3",
+};
+
+export function extractImports(code: string): string[] {
+  const imports = new Set<string>();
+  const lines = code.split("\n");
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const importMatch = trimmed.match(/^import\s+([a-zA-Z_][a-zA-Z0-9_.]*)/);
+    if (importMatch) {
+      const pkg = importMatch[1].split(".")[0];
+      if (!STDLIB_MODULES.has(pkg)) {
+        imports.add(IMPORT_MAPPING[pkg] || pkg);
+      }
+    }
+    const fromMatch = trimmed.match(/^from\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+import/);
+    if (fromMatch && !trimmed.startsWith("from .") && !trimmed.startsWith("from __")) {
+      const pkg = fromMatch[1].split(".")[0];
+      if (!STDLIB_MODULES.has(pkg)) {
+        imports.add(IMPORT_MAPPING[pkg] || pkg);
+      }
+    }
+  }
+  return Array.from(imports);
+}
+
 class AlgoRunner {
   private process: ChildProcess | null = null;
   private logBuffer: LogLine[] = [];
@@ -23,22 +151,13 @@ class AlgoRunner {
   private startedAt: Date | null = null;
   private cronJobs: any[] = [];
   private scheduledJobsInitialized = false;
+  private _installingDeps = false;
 
-  get status() {
-    return this._status;
-  }
-
-  get isRunning() {
-    return this.process !== null && this._status === "running";
-  }
-
-  get logs() {
-    return [...this.logBuffer];
-  }
-
-  get mode() {
-    return this._mode;
-  }
+  get status() { return this._status; }
+  get isRunning() { return this.process !== null && this._status === "running"; }
+  get logs() { return [...this.logBuffer]; }
+  get mode() { return this._mode; }
+  get installingDeps() { return this._installingDeps; }
 
   get runInfo() {
     return {
@@ -48,6 +167,8 @@ class AlgoRunner {
       startedAt: this.startedAt?.toISOString() || null,
       logCount: this.logBuffer.length,
       csvExists: this.csvExists(),
+      scriptInfo: this.getScriptInfo(),
+      installingDeps: this._installingDeps,
     };
   }
 
@@ -59,8 +180,97 @@ class AlgoRunner {
     return path.join(this.getConfigDir(), "config.csv");
   }
 
+  getUserAlgoDir(): string {
+    return path.join(process.cwd(), "server", "algo");
+  }
+
+  getUserAlgoPath(): string {
+    return path.join(this.getUserAlgoDir(), "user_algo.py");
+  }
+
   private getAlgoPath(): string {
-    return path.join(process.cwd(), "server", "algo", "alice_blue_trail_enhanced.py");
+    const userAlgo = this.getUserAlgoPath();
+    if (fs.existsSync(userAlgo)) return userAlgo;
+    return path.join(this.getUserAlgoDir(), "alice_blue_trail_enhanced.py");
+  }
+
+  getScriptInfo(): { hasUserScript: boolean; scriptName: string; size: number; imports: string[] } {
+    const userAlgoPath = this.getUserAlgoPath();
+    if (fs.existsSync(userAlgoPath)) {
+      const stats = fs.statSync(userAlgoPath);
+      const code = fs.readFileSync(userAlgoPath, "utf-8");
+      return { hasUserScript: true, scriptName: "user_algo.py", size: stats.size, imports: extractImports(code) };
+    }
+    const defaultPath = path.join(this.getUserAlgoDir(), "alice_blue_trail_enhanced.py");
+    if (fs.existsSync(defaultPath)) {
+      const stats = fs.statSync(defaultPath);
+      const code = fs.readFileSync(defaultPath, "utf-8");
+      return { hasUserScript: false, scriptName: "alice_blue_trail_enhanced.py", size: stats.size, imports: extractImports(code) };
+    }
+    return { hasUserScript: false, scriptName: "none", size: 0, imports: [] };
+  }
+
+  saveScript(code: string): void {
+    const dir = this.getUserAlgoDir();
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const header = `# ============================================================\n# IST Timezone is automatically applied via TZ=Asia/Kolkata\n# All datetime.now() calls will return Indian Standard Time\n# ============================================================\n\n`;
+    fs.writeFileSync(this.getUserAlgoPath(), header + code, "utf-8");
+    this.addLog("info", "User algorithm script saved successfully");
+  }
+
+  deleteUserScript(): void {
+    const p = this.getUserAlgoPath();
+    if (fs.existsSync(p)) {
+      fs.unlinkSync(p);
+      this.addLog("info", "User algorithm script deleted");
+    }
+  }
+
+  async installDependencies(): Promise<{ success: boolean; installed: string[]; failed: string[]; skipped: string[] }> {
+    const info = this.getScriptInfo();
+    const packages = info.imports;
+
+    if (packages.length === 0) {
+      return { success: true, installed: [], failed: [], skipped: [] };
+    }
+
+    this._installingDeps = true;
+    this.addLog("info", `[DEPS] Installing ${packages.length} detected package(s): ${packages.join(", ")}`);
+
+    const installed: string[] = [];
+    const failed: string[] = [];
+    const skipped: string[] = [];
+
+    for (const pkg of packages) {
+      const result = await new Promise<{ success: boolean; output: string }>((resolve) => {
+        const proc = spawn("pip3", ["install", "-q", pkg], {
+          env: { ...process.env },
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+        let output = "";
+        proc.stdout?.on("data", (d: Buffer) => { output += d.toString(); });
+        proc.stderr?.on("data", (d: Buffer) => { output += d.toString(); });
+        proc.on("close", (code) => resolve({ success: code === 0, output: output.trim() }));
+        proc.on("error", (err) => resolve({ success: false, output: err.message }));
+      });
+
+      if (result.success) {
+        if (result.output.includes("already satisfied")) {
+          this.addLog("info", `[DEPS] ✓ ${pkg} already installed`);
+          skipped.push(pkg);
+        } else {
+          this.addLog("info", `[DEPS] ✓ Installed ${pkg}`);
+          installed.push(pkg);
+        }
+      } else {
+        this.addLog("error", `[DEPS] ✗ Failed to install ${pkg}: ${result.output.slice(0, 100)}`);
+        failed.push(pkg);
+      }
+    }
+
+    this._installingDeps = false;
+    this.addLog("info", `[DEPS] Done. Installed: ${installed.length}, Already had: ${skipped.length}, Failed: ${failed.length}`);
+    return { success: failed.length === 0, installed, failed, skipped };
   }
 
   csvExists(): boolean {
@@ -69,9 +279,7 @@ class AlgoRunner {
 
   saveConfig(csvContent: string): void {
     const dir = this.getConfigDir();
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(this.getConfigPath(), csvContent, "utf-8");
     this.addLog("info", "CSV config saved to disk");
   }
@@ -98,20 +306,12 @@ class AlgoRunner {
   }
 
   private addLog(level: string, message: string) {
-    const line: LogLine = {
-      timestamp: this.getISTTimestamp(),
-      level,
-      message,
-    };
+    const line: LogLine = { timestamp: this.getISTTimestamp(), level, message };
     this.logBuffer.push(line);
     if (this.logBuffer.length > this.maxBufferSize) {
       this.logBuffer = this.logBuffer.slice(-this.maxBufferSize);
     }
-    this.listeners.forEach((listener) => {
-      try {
-        listener(line);
-      } catch {}
-    });
+    this.listeners.forEach((listener) => { try { listener(line); } catch {} });
     storage.createAlgoLog({ level, message }).catch(() => {});
   }
 
@@ -128,53 +328,35 @@ class AlgoRunner {
 
   start(asLive = false): { success: boolean; message: string } {
     if (asLive) this._mode = "live";
-    if (this.isRunning) {
-      return { success: false, message: "Algorithm is already running" };
-    }
-
-    if (!this.csvExists()) {
-      return { success: false, message: "No CSV config uploaded. Please upload your config first." };
-    }
+    if (this.isRunning) return { success: false, message: "Algorithm is already running" };
+    if (!this.csvExists()) return { success: false, message: "No CSV config uploaded. Please upload your config first." };
 
     const algoPath = this.getAlgoPath();
-    if (!fs.existsSync(algoPath)) {
-      return { success: false, message: "Algorithm file not found on server" };
-    }
+    if (!fs.existsSync(algoPath)) return { success: false, message: "Algorithm file not found. Please upload your Python script first." };
 
     this.logBuffer = [];
     const modeLabel = this._mode === "test" ? "[TEST MODE] " : "";
-    this.addLog("info", `${modeLabel}Starting algorithm...`);
+    this.addLog("info", `${modeLabel}Starting algorithm: ${path.basename(algoPath)}`);
     this._status = "running";
     this.startedAt = new Date();
 
     try {
       this.process = spawn("python3", ["-u", algoPath], {
-        env: {
-          ...process.env,
-          PYTHONUNBUFFERED: "1",
-          PYTHONIOENCODING: "utf-8",
-          TZ: "Asia/Kolkata",
-        },
+        env: { ...process.env, PYTHONUNBUFFERED: "1", PYTHONIOENCODING: "utf-8", TZ: "Asia/Kolkata" },
         stdio: ["ignore", "pipe", "pipe"],
       });
 
       this.process.stdout?.on("data", (data: Buffer) => {
-        const text = data.toString("utf-8");
-        for (const line of text.split("\n")) {
+        for (const line of data.toString("utf-8").split("\n")) {
           const trimmed = line.trim();
-          if (trimmed) {
-            this.addLog("stdout", trimmed);
-          }
+          if (trimmed) this.addLog("stdout", trimmed);
         }
       });
 
       this.process.stderr?.on("data", (data: Buffer) => {
-        const text = data.toString("utf-8");
-        for (const line of text.split("\n")) {
+        for (const line of data.toString("utf-8").split("\n")) {
           const trimmed = line.trim();
-          if (trimmed) {
-            this.addLog("stderr", trimmed);
-          }
+          if (trimmed) this.addLog("stderr", trimmed);
         }
       });
 
@@ -204,10 +386,8 @@ class AlgoRunner {
       this._status = "idle";
       return { success: false, message: "Algorithm is not running" };
     }
-
     this._status = "stopping";
     this.addLog("info", "Stopping algorithm...");
-
     try {
       this.process.kill("SIGINT");
       setTimeout(() => {
@@ -225,28 +405,19 @@ class AlgoRunner {
   setupScheduledJobs() {
     if (this.scheduledJobsInitialized) return;
     this.scheduledJobsInitialized = true;
-
-    for (const job of this.cronJobs) {
-      job.stop();
-    }
+    for (const job of this.cronJobs) job.stop();
     this.cronJobs = [];
 
     const startJob = cron.schedule("45 8 * * 1-5", () => {
       this.addLog("info", "[SCHEDULER] Auto-starting algorithm at 8:45 AM IST (Live Mode)");
-      if (this.csvExists()) {
-        this.start(true);
-      } else {
-        this.addLog("warning", "[SCHEDULER] No CSV config found, skipping auto-start");
-      }
+      if (this.csvExists()) this.start(true);
+      else this.addLog("warning", "[SCHEDULER] No CSV config found, skipping auto-start");
     }, { timezone: "Asia/Kolkata" });
 
     const testStartJob = cron.schedule("30 9 * * 1-5", () => {
       this.addLog("info", "[SCHEDULER] Auto-starting algorithm at 9:30 AM IST (Test Mode)");
-      if (this.csvExists()) {
-        this.startTest();
-      } else {
-        this.addLog("warning", "[SCHEDULER] No CSV config found, skipping test mode auto-start");
-      }
+      if (this.csvExists()) this.startTest();
+      else this.addLog("warning", "[SCHEDULER] No CSV config found, skipping test mode auto-start");
     }, { timezone: "Asia/Kolkata" });
 
     const stopJob = cron.schedule("10 15 * * 1-5", () => {

@@ -24,6 +24,7 @@ import SubscriptionPage from "@/pages/subscription";
 import AdminDashboardPage from "@/pages/admin-dashboard";
 import AdminUsersPage from "@/pages/admin-users";
 import AdminLogsPage from "@/pages/admin-logs";
+import AlgoUploadPage from "@/pages/algo-upload";
 import { useEffect } from "react";
 
 function RedirectTo({ to }: { to: string }) {
@@ -288,6 +289,11 @@ function AuthenticatedLayout() {
               <Route path="/admin/logs">{() => (
                 <div className="flex-1 overflow-auto p-4 sm:p-6">
                   <AdminLogsPage />
+                </div>
+              )}</Route>
+              <Route path="/algo-manager">{() => (
+                <div className="flex-1 overflow-auto p-4 sm:p-6">
+                  <AlgoUploadPage />
                 </div>
               )}</Route>
               <Route>{() => (

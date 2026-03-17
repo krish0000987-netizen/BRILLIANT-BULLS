@@ -10,7 +10,8 @@ import bcrypt from "bcrypt";
 import { encrypt, decrypt } from "./encryption";
 import { setupAuth, isAuthenticated, isAdmin } from "./replit_integrations/auth/replitAuth";
 import { registerAuthRoutes } from "./replit_integrations/auth/routes";
-import { algoRunner } from "./algoRunner";
+import { algoRunner, extractImports } from "./algoRunner";
+import fs from "fs";
 
 interface AuthRequest extends Request {
   user?: any;
@@ -815,6 +816,71 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     algoRunner.deleteConfig();
     await logAudit(getUserId(req), "Algo CSV config deleted", "config", req);
     res.json({ success: true, message: "Config deleted" });
+  });
+
+  // ── Algorithm Script Management ───────────────────────────────────────
+
+  app.get("/api/algo/script-info", isAuthenticated, (_req: AuthRequest, res: Response) => {
+    res.json(algoRunner.getScriptInfo());
+  });
+
+  app.post("/api/algo/upload-script", isAuthenticated, isAdmin, upload.single("file") as any, async (req: AuthRequest, res: Response) => {
+    try {
+      if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+      if (!req.file.originalname.endsWith(".py")) {
+        return res.status(400).json({ message: "Only .py files are accepted" });
+      }
+      const code = req.file.buffer.toString("utf-8");
+      algoRunner.saveScript(code);
+      await logAudit(getUserId(req), `Algo script uploaded: ${req.file.originalname}`, "algo", req);
+      res.json({ success: true, message: "Algorithm script uploaded successfully", scriptInfo: algoRunner.getScriptInfo() });
+    } catch (err: any) {
+      res.status(500).json({ message: "Failed to upload script" });
+    }
+  });
+
+  app.post("/api/algo/save-script", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
+    try {
+      const { code } = req.body;
+      if (!code || typeof code !== "string" || code.trim().length === 0) {
+        return res.status(400).json({ message: "Python code is required" });
+      }
+      algoRunner.saveScript(code);
+      await logAudit(getUserId(req), "Algo script saved (pasted code)", "algo", req);
+      res.json({ success: true, message: "Algorithm script saved successfully", scriptInfo: algoRunner.getScriptInfo() });
+    } catch (err: any) {
+      res.status(500).json({ message: "Failed to save script" });
+    }
+  });
+
+  app.get("/api/algo/script-content", isAuthenticated, isAdmin, (_req: AuthRequest, res: Response) => {
+    try {
+      const p = algoRunner.getUserAlgoPath();
+      if (!fs.existsSync(p)) return res.status(404).json({ message: "No user script found" });
+      const content = fs.readFileSync(p, "utf-8");
+      res.json({ content });
+    } catch {
+      res.status(500).json({ message: "Failed to read script" });
+    }
+  });
+
+  app.delete("/api/algo/script", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
+    algoRunner.deleteUserScript();
+    await logAudit(getUserId(req), "Algo user script deleted", "algo", req, "warning");
+    res.json({ success: true, message: "User script deleted. Default script will be used." });
+  });
+
+  app.post("/api/algo/install-deps", isAuthenticated, isAdmin, async (req: AuthRequest, res: Response) => {
+    if (algoRunner.installingDeps) {
+      return res.status(409).json({ message: "Dependency installation already in progress" });
+    }
+    try {
+      const result = await algoRunner.installDependencies();
+      await logAudit(getUserId(req), `Installed algo deps: ${result.installed.join(",")}`, "algo", req);
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ message: "Failed to install dependencies" });
+    }
   });
 
   return httpServer;
