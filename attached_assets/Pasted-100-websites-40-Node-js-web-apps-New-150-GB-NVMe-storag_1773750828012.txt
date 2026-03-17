@@ -1,0 +1,97 @@
+100 websites
+40 Node.js web apps New
+150 GB NVMe storage
+5 GB RAM , 5 CPU cores
+30,00,000 inodes (files & directories)
+150 email accounts Free
+Unlimited databases
+100 PHP workers
+LiteSpeed Server + CDN
+cPanel control panel
+Free domain for 1 year
+Free SSL for every website
+24/7 priority expert support
+Daily backups
+India server location
+Free website migration
+Free email marketer tool
+Built-in WP staging
+Instant malware removal
+Developer Tools
+Node.js, Python, Django
+Laravel, CodeIgniter, PHP
+SSH + GIT access
+Daily backups
+India server location
+Free website migration
+Free email marketer tool
+Built-in WP staging
+Instant malware removal
+Developer Tools
+Technical Specs
+~2,25,000 monthly visits
+Unlimited subdomains
+125 MySQL max user connections
+Unlimited FTP accounts & Cronjobs
+Multiple PHP versions
+Cache manager
+DNS management
+Unmetered bandwidth
+Daily backups
+India server location
+Free website migration
+Free email marketer tool
+Built-in WP staging
+Instant malware removal
+Developer Tools
+Technical Specs
+Managed WordPress
+1-Click WP install
+Managed WP & WooCommerce
+WP-CLI + SSH
+Auto-Updates + Security scanner
+Object caching
+WordPress multisite
+Daily backups
+India server location
+Free website migration
+Free email marketer tool
+Built-in WP staging
+Instant malware removal
+Developer Tools
+Technical Specs
+Managed WordPress
+AI tools included
+AI website builder
+AI image & Content generator
+AI blog generator
+Daily backups
+India server location
+Free website migration
+Free email marketer tool
+Built-in WP staging
+Instant malware removal
+Developer Tools
+Technical Specs
+Managed WordPress
+AI tools included
+Security Suite
+Web application firewall
+Enhanced DDoS protection
+Secure access manager
+Anycast nameservers
+Daily backups
+India server location
+Free website migration
+Free email marketer tool
+Built-in WP staging
+Instant malware removal
+Developer Tools
+Technical Specs
+Managed WordPress
+AI tools included
+Security Suite
+Support & Policies
+24/7/365 expert support
+99.9% uptime SLA
+30-day money-back guarantee
