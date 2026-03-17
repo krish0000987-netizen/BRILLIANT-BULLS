@@ -377,19 +377,28 @@ class AlgoRunner {
 
     this.addLog("info", `Config file at: ${algoConfigPath} (exists: ${fs.existsSync(algoConfigPath)})`);
 
+    // Python timezone bootstrap: sets TZ env + calls time.tzset() so the
+    // logging formatter uses IST timestamps, then execs the actual script.
+    const scriptName = path.basename(algoPath);
+    const tzBootstrap = [
+      "import os, time, sys",
+      "os.environ['TZ'] = 'Asia/Kolkata'",
+      "time.tzset()",
+      `exec(compile(open(r'${scriptName}').read(), r'${scriptName}', 'exec'))`,
+    ].join("; ");
+
     try {
-      this.process = spawn("python3", ["-u", algoPath], {
+      this.process = spawn("python3", ["-u", "-c", tzBootstrap], {
         cwd: this.getUserAlgoDir(), // run script from its own directory
         env: {
           ...process.env,
           PYTHONUNBUFFERED: "1",
           PYTHONIOENCODING: "utf-8",
           TZ: "Asia/Kolkata",
-          // Pass config path via multiple env vars so any script can find it
           ALGO_CONFIG_PATH: algoConfigPath,
           CONFIG_FILE: algoConfigPath,
           CONFIG_PATH: algoConfigPath,
-          ALGO_CONFIG_FILE: "config.csv",       // relative path
+          ALGO_CONFIG_FILE: "config.csv",
           ALGO_CONFIG_DIR: this.getUserAlgoDir(),
         },
         stdio: ["ignore", "pipe", "pipe"],

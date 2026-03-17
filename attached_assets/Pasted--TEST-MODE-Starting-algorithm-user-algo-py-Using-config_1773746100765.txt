@@ -1,0 +1,339 @@
+[TEST MODE] Starting algorithm: user_algo.py
+Using config: /home/runner/workspace/server/algo/config.csv
+Config file at: /home/runner/workspace/server/algo/config.csv (exists: true)
+[97m2026-03-17 11:04:42,151 | INFO     |
+================================================================================[0m
+[97m2026-03-17 11:04:42,152 | INFO     | ALICE BLUE ORB STRATEGY — AUTO DIRECTION (V3)[0m
+[97m2026-03-17 11:04:42,152 | INFO     | ================================================================================[0m
+[97m2026-03-17 11:04:42,152 | INFO     | Loading config from: config.csv[0m
+[97m2026-03-17 11:04:42,152 | INFO     | Config loaded successfully[0m
+[97m2026-03-17 11:04:42,152 | INFO     |    User ID     : 2558727[0m
+[97m2026-03-17 11:04:42,153 | INFO     |    API Key     : yAt3skvPje[0m
+[97m2026-03-17 11:04:42,153 | INFO     |    Secret Key  : SET (len=100)[0m
+[97m2026-03-17 11:04:42,153 | INFO     |    Session ID  : SET (len=1614) ← will skip login[0m
+[97m2026-03-17 11:04:42,153 | INFO     |    Stocks      : 27[0m
+[97m2026-03-17 11:04:42,153 | INFO     |    Capital     : Rs.5,000.00[0m
+[97m2026-03-17 11:04:42,153 | INFO     |    Risk/Trade  : 0.50%[0m
+[97m2026-03-17 11:04:42,153 | INFO     |    Max Trades  : 4[0m
+[97m2026-03-17 11:04:42,153 | INFO     |    Paper Trade : NO[0m
+[97m2026-03-17 11:04:42,153 | INFO     |    Test Mode   : YES[0m
+[97m2026-03-17 11:04:42,153 | INFO     |    ORB Filter  : 0.4% - 1.5%[0m
+[97m2026-03-17 11:04:42,153 | INFO     |   Using session_id from config.csv[0m
+[90m2026-03-17 11:04:42,161 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:42,546 | DEBUG    | https://ant.aliceblueonline.com:443 "GET /open-api/od-rest/v1/customer/accountDetails HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:42,547 | DEBUG    |   Token validation → HTTP 200  body[:60]='<!DOCTYPE html>\n<html lang="en">\n  <head>\n    <meta charset='[0m
+[90m2026-03-17 11:04:42,547 | DEBUG    |   Token returned HTML — session expired[0m
+[90m2026-03-17 11:04:42,549 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:42,876 | DEBUG    | https://ant.aliceblueonline.com:443 "GET /rest/AliceBlueAPIService/api/customer/accountDetails HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:42,880 | DEBUG    |   Token validation → HTTP 200  body[:60]='{"accountStatus":"Activated","dpType":"NA","accountId":"2558'[0m
+[90m2026-03-17 11:04:42,881 | DEBUG    |   ✓ Token valid (JSON response)[0m
+[97m2026-03-17 11:04:42,883 | INFO     |   Session token saved → session_token.txt[0m
+[97m2026-03-17 11:04:42,884 | INFO     | [0m
+[97m2026-03-17 11:04:42,884 | INFO     |   ✅ LOGIN SUCCESSFUL[0m
+[97m2026-03-17 11:04:42,884 | INFO     |      Token   : eyJhbGciOi...Kr_K0yZg  (len=1614)[0m
+[97m2026-03-17 11:04:42,884 | INFO     |      Saved   : session_token.txt  (reused until midnight)[0m
+[97m2026-03-17 11:04:42,884 | INFO     | [0m
+[97m2026-03-17 11:04:42,884 | INFO     | [TEST MODE] Skipping market-open wait[0m
+[97m2026-03-17 11:04:42,884 | INFO     |
+Creating instrument mapping for 27 stocks...[0m
+[90m2026-03-17 11:04:42,887 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:43,233 | DEBUG    | https://a3.aliceblueonline.com:443 "GET /open-api/od/v1/contract/master?exchange=NSE HTTP/1.1" 404 None[0m
+[90m2026-03-17 11:04:43,237 | DEBUG    | Starting new HTTPS connection (1): v2api.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:43,669 | DEBUG    | https://v2api.aliceblueonline.com:443 "GET /restpy/contract_master?exch=NSE HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:44,281 | DEBUG    |   _parse_nse_csv: 2460 EQ instruments parsed[0m
+[97m2026-03-17 11:04:44,282 | INFO     |   NSE master: downloaded fresh (2,460 instruments)[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  MRPL           token=2283     ts=MRPL-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  CHENNPETRO     token=2049     ts=CHENNPETRO-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  ADANIPOWER     token=17388    ts=ADANIPOWER-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  LINDEINDIA     token=1627     ts=LINDEINDIA-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  JINDALSAW      token=3024     ts=JINDALSAW-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  MCX            token=31181    ts=MCX-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  ATHERENERG     token=757645   ts=ATHERENERG-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  GODREJIND      token=10925    ts=GODREJIND-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  CRAFTSMAN      token=2854     ts=CRAFTSMAN-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  VBL            token=18921    ts=VBL-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  INDGN          token=23693    ts=INDGN-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  MARUTI         token=10999    ts=MARUTI-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  BAJAJHLDNG     token=305      ts=BAJAJHLDNG-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  ITCHOTELS      token=29251    ts=ITCHOTELS-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  VIJAYA         token=5585     ts=VIJAYA-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  GICRE          token=277      ts=GICRE-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  DALBHARAT      token=8075     ts=DALBHARAT-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  LICI           token=9480     ts=LICI-EQ[0m
+[97m2026-03-17 11:04:44,283 | INFO     |    OK  INDHOTEL       token=1512     ts=INDHOTEL-EQ[0m
+[97m2026-03-17 11:04:44,284 | INFO     |    OK  TRITURBINE     token=25584    ts=TRITURBINE-EQ[0m
+[97m2026-03-17 11:04:44,284 | INFO     |    OK  HEG            token=1336     ts=HEG-EQ[0m
+[97m2026-03-17 11:04:44,284 | INFO     |    OK  RAMCOCEM       token=2043     ts=RAMCOCEM-EQ[0m
+[97m2026-03-17 11:04:44,284 | INFO     |    OK  CARBORUNIV     token=595      ts=CARBORUNIV-EQ[0m
+[97m2026-03-17 11:04:44,284 | INFO     |    OK  JSL            token=11236    ts=JSL-EQ[0m
+[97m2026-03-17 11:04:44,284 | INFO     |    OK  FLUOROCHEM     token=13750    ts=FLUOROCHEM-EQ[0m
+[97m2026-03-17 11:04:44,284 | INFO     |    OK  UNITDSPR       token=10447    ts=UNITDSPR-EQ[0m
+[97m2026-03-17 11:04:44,284 | INFO     |    OK  CONCOR         token=4749     ts=CONCOR-EQ[0m
+[97m2026-03-17 11:04:44,284 | INFO     | Mapped 27/27 instruments[0m
+[97m2026-03-17 11:04:44,284 | INFO     | [Token validation] Testing chart API for MRPL ...[0m
+[90m2026-03-17 11:04:44,287 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:45,269 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:45,282 | DEBUG    | V3 chart: 375 candles for token=2283[0m
+[97m2026-03-17 11:04:45,285 | INFO     | [Token validation] ✓ 375 candle(s) returned — token is valid.[0m
+[97m2026-03-17 11:04:45,286 | INFO     | ORBScanner: susertoken OK (len=1614)[0m
+[97m2026-03-17 11:04:45,286 | INFO     |
+================================================================================[0m
+[97m2026-03-17 11:04:45,286 | INFO     | CALCULATING ORB RANGES (9:15-9:30 AM)[0m
+[97m2026-03-17 11:04:45,286 | INFO     | ================================================================================[0m
+[90m2026-03-17 11:04:45,286 | DEBUG    | MRPL: fetching ORB data 09:15–09:30 (now=11:04:45)[0m
+[90m2026-03-17 11:04:45,289 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:45,610 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:45,618 | DEBUG    | V3 chart: 375 candles for token=2283[0m
+[97m2026-03-17 11:04:45,639 | INFO     | MRPL: ORB High=212.00  Low=195.19  Range=8.61%[0m
+[90m2026-03-17 11:04:45,639 | DEBUG    | CHENNPETRO: fetching ORB data 09:15–09:30 (now=11:04:45)[0m
+[90m2026-03-17 11:04:45,642 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:45,989 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:45,998 | DEBUG    | V3 chart: 375 candles for token=2049[0m
+[97m2026-03-17 11:04:46,005 | INFO     | CHENNPETRO: ORB High=996.90  Low=968.00  Range=2.99%[0m
+[90m2026-03-17 11:04:46,006 | DEBUG    | ADANIPOWER: fetching ORB data 09:15–09:30 (now=11:04:46)[0m
+[90m2026-03-17 11:04:46,011 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:46,357 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:46,367 | DEBUG    | V3 chart: 375 candles for token=17388[0m
+[97m2026-03-17 11:04:46,375 | INFO     | ADANIPOWER: ORB High=157.18  Low=154.66  Range=1.63%[0m
+[90m2026-03-17 11:04:46,375 | DEBUG    | LINDEINDIA: fetching ORB data 09:15–09:30 (now=11:04:46)[0m
+[90m2026-03-17 11:04:46,377 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:46,717 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:46,727 | DEBUG    | V3 chart: 375 candles for token=1627[0m
+[97m2026-03-17 11:04:46,734 | INFO     | LINDEINDIA: ORB High=7250.00  Low=7150.00  Range=1.40%[0m
+[90m2026-03-17 11:04:46,734 | DEBUG    | JINDALSAW: fetching ORB data 09:15–09:30 (now=11:04:46)[0m
+[90m2026-03-17 11:04:46,738 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:47,076 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:47,084 | DEBUG    | V3 chart: 375 candles for token=3024[0m
+[97m2026-03-17 11:04:47,096 | INFO     | JINDALSAW: ORB High=202.53  Low=197.00  Range=2.81%[0m
+[90m2026-03-17 11:04:47,102 | DEBUG    | MCX: fetching ORB data 09:15–09:30 (now=11:04:47)[0m
+[90m2026-03-17 11:04:47,105 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:47,916 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:47,923 | DEBUG    | V3 chart: 375 candles for token=31181[0m
+[97m2026-03-17 11:04:47,929 | INFO     | MCX: ORB High=2593.80  Low=2570.00  Range=0.93%[0m
+[90m2026-03-17 11:04:47,929 | DEBUG    | ATHERENERG: fetching ORB data 09:15–09:30 (now=11:04:47)[0m
+[90m2026-03-17 11:04:47,931 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:48,264 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:48,274 | DEBUG    | V3 chart: 375 candles for token=757645[0m
+[97m2026-03-17 11:04:48,281 | INFO     | ATHERENERG: ORB High=723.75  Low=713.00  Range=1.51%[0m
+[90m2026-03-17 11:04:48,281 | DEBUG    | GODREJIND: fetching ORB data 09:15–09:30 (now=11:04:48)[0m
+[90m2026-03-17 11:04:48,284 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:48,637 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:48,645 | DEBUG    | V3 chart: 375 candles for token=10925[0m
+[97m2026-03-17 11:04:48,652 | INFO     | GODREJIND: ORB High=865.40  Low=843.45  Range=2.60%[0m
+[90m2026-03-17 11:04:48,653 | DEBUG    | CRAFTSMAN: fetching ORB data 09:15–09:30 (now=11:04:48)[0m
+[90m2026-03-17 11:04:48,669 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:48,991 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:49,000 | DEBUG    | V3 chart: 375 candles for token=2854[0m
+[97m2026-03-17 11:04:49,006 | INFO     | CRAFTSMAN: ORB High=6850.50  Low=6741.00  Range=1.62%[0m
+[90m2026-03-17 11:04:49,007 | DEBUG    | VBL: fetching ORB data 09:15–09:30 (now=11:04:49)[0m
+[90m2026-03-17 11:04:49,009 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:49,346 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:49,355 | DEBUG    | V3 chart: 375 candles for token=18921[0m
+[97m2026-03-17 11:04:49,362 | INFO     | VBL: ORB High=410.45  Low=405.00  Range=1.35%[0m
+[90m2026-03-17 11:04:49,362 | DEBUG    | INDGN: fetching ORB data 09:15–09:30 (now=11:04:49)[0m
+[90m2026-03-17 11:04:49,365 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:49,687 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:49,699 | DEBUG    | V3 chart: 375 candles for token=23693[0m
+[97m2026-03-17 11:04:49,704 | INFO     | INDGN: ORB High=437.60  Low=433.50  Range=0.95%[0m
+[90m2026-03-17 11:04:49,705 | DEBUG    | MARUTI: fetching ORB data 09:15–09:30 (now=11:04:49)[0m
+[90m2026-03-17 11:04:49,706 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:50,479 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:50,491 | DEBUG    | V3 chart: 375 candles for token=10999[0m
+[97m2026-03-17 11:04:50,499 | INFO     | MARUTI: ORB High=12918.00  Low=12686.00  Range=1.83%[0m
+[90m2026-03-17 11:04:50,499 | DEBUG    | BAJAJHLDNG: fetching ORB data 09:15–09:30 (now=11:04:50)[0m
+[90m2026-03-17 11:04:50,502 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:50,829 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:50,837 | DEBUG    | V3 chart: 375 candles for token=305[0m
+[97m2026-03-17 11:04:50,843 | INFO     | BAJAJHLDNG: ORB High=9664.00  Low=9531.00  Range=1.40%[0m
+[90m2026-03-17 11:04:50,843 | DEBUG    | ITCHOTELS: fetching ORB data 09:15–09:30 (now=11:04:50)[0m
+[90m2026-03-17 11:04:50,846 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:51,188 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:51,198 | DEBUG    | V3 chart: 375 candles for token=29251[0m
+[97m2026-03-17 11:04:51,204 | INFO     | ITCHOTELS: ORB High=154.01  Low=151.66  Range=1.55%[0m
+[90m2026-03-17 11:04:51,204 | DEBUG    | VIJAYA: fetching ORB data 09:15–09:30 (now=11:04:51)[0m
+[90m2026-03-17 11:04:51,206 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:51,529 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:51,538 | DEBUG    | V3 chart: 375 candles for token=5585[0m
+[97m2026-03-17 11:04:51,546 | INFO     | VIJAYA: ORB High=948.70  Low=923.20  Range=2.76%[0m
+[90m2026-03-17 11:04:51,546 | DEBUG    | GICRE: fetching ORB data 09:15–09:30 (now=11:04:51)[0m
+[90m2026-03-17 11:04:51,548 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:51,876 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:51,885 | DEBUG    | V3 chart: 375 candles for token=277[0m
+[97m2026-03-17 11:04:51,891 | INFO     | GICRE: ORB High=364.40  Low=359.15  Range=1.46%[0m
+[90m2026-03-17 11:04:51,892 | DEBUG    | DALBHARAT: fetching ORB data 09:15–09:30 (now=11:04:51)[0m
+[90m2026-03-17 11:04:51,894 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:52,264 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:52,275 | DEBUG    | V3 chart: 375 candles for token=8075[0m
+[97m2026-03-17 11:04:52,281 | INFO     | DALBHARAT: ORB High=1868.10  Low=1844.50  Range=1.28%[0m
+[90m2026-03-17 11:04:52,282 | DEBUG    | LICI: fetching ORB data 09:15–09:30 (now=11:04:52)[0m
+[90m2026-03-17 11:04:52,284 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:52,625 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:52,635 | DEBUG    | V3 chart: 375 candles for token=9480[0m
+[97m2026-03-17 11:04:52,642 | INFO     | LICI: ORB High=781.65  Low=775.95  Range=0.73%[0m
+[90m2026-03-17 11:04:52,643 | DEBUG    | INDHOTEL: fetching ORB data 09:15–09:30 (now=11:04:52)[0m
+[90m2026-03-17 11:04:52,645 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:52,997 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:53,007 | DEBUG    | V3 chart: 375 candles for token=1512[0m
+[97m2026-03-17 11:04:53,014 | INFO     | INDHOTEL: ORB High=618.25  Low=610.60  Range=1.25%[0m
+[90m2026-03-17 11:04:53,014 | DEBUG    | TRITURBINE: fetching ORB data 09:15–09:30 (now=11:04:53)[0m
+[90m2026-03-17 11:04:53,017 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:53,373 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:53,385 | DEBUG    | V3 chart: 375 candles for token=25584[0m
+[97m2026-03-17 11:04:53,393 | INFO     | TRITURBINE: ORB High=464.95  Low=456.70  Range=1.81%[0m
+[90m2026-03-17 11:04:53,393 | DEBUG    | HEG: fetching ORB data 09:15–09:30 (now=11:04:53)[0m
+[90m2026-03-17 11:04:53,396 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:53,739 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:53,749 | DEBUG    | V3 chart: 375 candles for token=1336[0m
+[97m2026-03-17 11:04:53,756 | INFO     | HEG: ORB High=501.50  Low=494.25  Range=1.47%[0m
+[90m2026-03-17 11:04:53,756 | DEBUG    | RAMCOCEM: fetching ORB data 09:15–09:30 (now=11:04:53)[0m
+[90m2026-03-17 11:04:53,759 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:54,102 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:54,110 | DEBUG    | V3 chart: 375 candles for token=2043[0m
+[97m2026-03-17 11:04:54,118 | INFO     | RAMCOCEM: ORB High=976.40  Low=963.80  Range=1.31%[0m
+[90m2026-03-17 11:04:54,120 | DEBUG    | CARBORUNIV: fetching ORB data 09:15–09:30 (now=11:04:54)[0m
+[90m2026-03-17 11:04:54,122 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:54,447 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:54,455 | DEBUG    | V3 chart: 375 candles for token=595[0m
+[97m2026-03-17 11:04:54,461 | INFO     | CARBORUNIV: ORB High=764.05  Low=753.05  Range=1.46%[0m
+[90m2026-03-17 11:04:54,461 | DEBUG    | JSL: fetching ORB data 09:15–09:30 (now=11:04:54)[0m
+[90m2026-03-17 11:04:54,463 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:54,801 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:54,810 | DEBUG    | V3 chart: 375 candles for token=11236[0m
+[97m2026-03-17 11:04:54,816 | INFO     | JSL: ORB High=709.50  Low=695.00  Range=2.09%[0m
+[90m2026-03-17 11:04:54,817 | DEBUG    | FLUOROCHEM: fetching ORB data 09:15–09:30 (now=11:04:54)[0m
+[90m2026-03-17 11:04:54,819 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:55,174 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:55,186 | DEBUG    | V3 chart: 375 candles for token=13750[0m
+[97m2026-03-17 11:04:55,195 | INFO     | FLUOROCHEM: ORB High=3071.60  Low=2999.00  Range=2.42%[0m
+[90m2026-03-17 11:04:55,195 | DEBUG    | UNITDSPR: fetching ORB data 09:15–09:30 (now=11:04:55)[0m
+[90m2026-03-17 11:04:55,198 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:55,527 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:55,536 | DEBUG    | V3 chart: 375 candles for token=10447[0m
+[97m2026-03-17 11:04:55,545 | INFO     | UNITDSPR: ORB High=1332.50  Low=1318.60  Range=1.05%[0m
+[90m2026-03-17 11:04:55,545 | DEBUG    | CONCOR: fetching ORB data 09:15–09:30 (now=11:04:55)[0m
+[90m2026-03-17 11:04:55,550 | DEBUG    | Starting new HTTPS connection (1): a3.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:55,883 | DEBUG    | https://a3.aliceblueonline.com:443 "POST /open-api/od/ChartAPIService/api/chart/history HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:04:55,891 | DEBUG    | V3 chart: 375 candles for token=4749[0m
+[97m2026-03-17 11:04:55,898 | INFO     | CONCOR: ORB High=456.00  Low=450.60  Range=1.20%[0m
+[97m2026-03-17 11:04:55,899 | INFO     |
+ORB Range Filter: ENABLED (0.4%-1.5%)[0m
+[97m2026-03-17 11:04:55,899 | INFO     |
+PASSED ORB FILTER: 14[0m
+[97m2026-03-17 11:04:55,899 | INFO     |    LINDEINDIA   AUTO   Range: 1.40%[0m
+[97m2026-03-17 11:04:55,899 | INFO     |    MCX          AUTO   Range: 0.93%[0m
+[97m2026-03-17 11:04:55,899 | INFO     |    VBL          AUTO   Range: 1.35%[0m
+[97m2026-03-17 11:04:55,899 | INFO     |    INDGN        AUTO   Range: 0.95%[0m
+[97m2026-03-17 11:04:55,899 | INFO     |    BAJAJHLDNG   AUTO   Range: 1.40%[0m
+[97m2026-03-17 11:04:55,899 | INFO     |    GICRE        AUTO   Range: 1.46%[0m
+[97m2026-03-17 11:04:55,899 | INFO     |    DALBHARAT    AUTO   Range: 1.28%[0m
+[97m2026-03-17 11:04:55,899 | INFO     |    LICI         AUTO   Range: 0.73%[0m
+[97m2026-03-17 11:04:55,899 | INFO     |    INDHOTEL     AUTO   Range: 1.25%[0m
+[97m2026-03-17 11:04:55,899 | INFO     |    HEG          AUTO   Range: 1.47%[0m
+[97m2026-03-17 11:04:55,899 | INFO     |    RAMCOCEM     AUTO   Range: 1.31%[0m
+[97m2026-03-17 11:04:55,899 | INFO     |    CARBORUNIV   AUTO   Range: 1.46%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    UNITDSPR     AUTO   Range: 1.05%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    CONCOR       AUTO   Range: 1.20%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |
+FAILED (out of range): 13[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    MRPL         Range 8.61%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    CHENNPETRO   Range 2.99%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    ADANIPOWER   Range 1.63%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    JINDALSAW    Range 2.81%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    ATHERENERG   Range 1.51%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    GODREJIND    Range 2.60%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    CRAFTSMAN    Range 1.62%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    MARUTI       Range 1.83%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    ITCHOTELS    Range 1.55%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    VIJAYA       Range 2.76%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    TRITURBINE   Range 1.81%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    JSL          Range 2.09%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |    FLUOROCHEM   Range 2.42%[0m
+[97m2026-03-17 11:04:55,900 | INFO     |
+Pre-scan: checking current price vs ORB for all qualified stocks...[0m
+[90m2026-03-17 11:04:55,902 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:56,223 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:04:56,226 | INFO     |   ⏭  LINDEINDIA   already broke LONG by 1.05%  (CMP=7327.00  ORB=7150.00–7250.00)  — SKIPPING (entry missed)[0m
+[90m2026-03-17 11:04:56,229 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:56,553 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:04:56,556 | INFO     |   ⏭  MCX          already broke LONG by 2.92%  (CMP=2671.80  ORB=2570.00–2593.80)  — SKIPPING (entry missed)[0m
+[90m2026-03-17 11:04:56,558 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:56,879 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:04:56,883 | INFO     |   ✅  VBL          inside ORB  CMP=406.35  (dist to BO: 0.33%)[0m
+[90m2026-03-17 11:04:56,887 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:57,191 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:04:57,194 | INFO     |   ⏭  INDGN        already broke SHORT by 0.41%  (CMP=431.75  ORB=433.50–437.60)  — SKIPPING (entry missed)[0m
+[90m2026-03-17 11:04:57,197 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:57,972 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:04:57,976 | INFO     |   ✅  BAJAJHLDNG   inside ORB  CMP=9663.00  (dist to BO: 0.01%)[0m
+[90m2026-03-17 11:04:57,978 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:58,332 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:04:58,336 | INFO     |   ⏭  GICRE        already broke LONG by 0.92%  (CMP=367.80  ORB=359.15–364.40)  — SKIPPING (entry missed)[0m
+[90m2026-03-17 11:04:58,339 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:58,646 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:04:58,649 | INFO     |   ✅  DALBHARAT    inside ORB  CMP=1854.90  (dist to BO: 0.56%)[0m
+[90m2026-03-17 11:04:58,652 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:58,960 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:04:58,963 | INFO     |   ✅  LICI         inside ORB  CMP=777.75  (dist to BO: 0.23%)[0m
+[90m2026-03-17 11:04:58,965 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:59,290 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:04:59,294 | INFO     |   ⏭  INDHOTEL     already broke LONG by 0.61%  (CMP=622.05  ORB=610.60–618.25)  — SKIPPING (entry missed)[0m
+[90m2026-03-17 11:04:59,297 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:59,634 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:04:59,639 | INFO     |   ✅  HEG          inside ORB  CMP=501.10  (dist to BO: 0.08%)[0m
+[90m2026-03-17 11:04:59,642 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:04:59,977 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:04:59,981 | INFO     |   ✅  RAMCOCEM     inside ORB  CMP=969.70  (dist to BO: 0.61%)[0m
+[90m2026-03-17 11:04:59,984 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:05:00,353 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:05:00,356 | INFO     |   ⏭  CARBORUNIV   already broke SHORT by 0.03%  (CMP=752.85  ORB=753.05–764.05)  — SKIPPING (entry missed)[0m
+[90m2026-03-17 11:05:00,359 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:05:00,678 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:05:00,682 | INFO     |   ⏭  UNITDSPR     already broke SHORT by 1.32%  (CMP=1301.40  ORB=1318.60–1332.50)  — SKIPPING (entry missed)[0m
+[90m2026-03-17 11:05:00,685 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:05:01,454 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[97m2026-03-17 11:05:01,458 | INFO     |   ✅  CONCOR       inside ORB  CMP=452.40  (dist to BO: 0.40%)[0m
+[97m2026-03-17 11:05:01,460 | INFO     |
+Removed 7 stocks (already broke out before monitoring started):
+LINDEINDIA, MCX, INDGN, GICRE, INDHOTEL, CARBORUNIV, UNITDSPR[0m
+[97m2026-03-17 11:05:01,460 | INFO     |
+7 stocks inside ORB range and ready for monitoring[0m
+[97m2026-03-17 11:05:01,460 | INFO     | ================================================================================[0m
+[97m2026-03-17 11:05:01,460 | INFO     |
+================================================================================[0m
+[97m2026-03-17 11:05:01,460 | INFO     | 5-MIN CANDLE CLOSED at 11:05:01[0m
+[97m2026-03-17 11:05:01,460 | INFO     | SCAN #1 — Checking for breakouts[0m
+[97m2026-03-17 11:05:01,460 | INFO     | ================================================================================[0m
+[90m2026-03-17 11:05:01,463 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:05:01,775 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:05:01,781 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:05:02,104 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:05:02,110 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:05:02,454 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:05:02,460 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:05:02,769 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:05:02,775 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:05:03,094 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:05:03,101 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:05:03,409 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[90m2026-03-17 11:05:03,415 | DEBUG    | Starting new HTTPS connection (1): ant.aliceblueonline.com:443[0m
+[90m2026-03-17 11:05:03,716 | DEBUG    | https://ant.aliceblueonline.com:443 "POST /rest/AliceBlueAPIService/api/ScripDetails/getScripQuoteDetails HTTP/1.1" 200 None[0m
+[1m[97m══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[1m[97m  📊  ORB STRATEGY DASHBOARD  —  Scan #1  |  11:05:03  |  Traded: 0  |  Watching: 7  |  Filtered: 0[0m
+[1m[97m══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[90m  Symbol      Dir     ORB Low    ORB Hi  Range%       CMP   Dist%  Bar           EMA  Vol  Wick  Status[0m
+[90m──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[93m  ⚡ CLOSE TO BREAKOUT  (3)  ← price within 0.3% of ORB boundary[0m
+[93m  BAJAJHLDNG  LONG    9531.00   9664.00    1.40      9663    0.01  [90m·[0m[90m·[0m[90m·[0m[96m─[0m[96m─[0m[96m─[0m[93m●[0m[90m·[0m[90m·[0m[90m·[0m     ✗    ✗     ✓  ↑ LONG soon[0m
+[93m  HEG         LONG     494.25    501.50    1.47    501.10    0.08  [90m·[0m[90m·[0m[90m·[0m[96m─[0m[96m─[0m[96m─[0m[93m●[0m[90m·[0m[90m·[0m[90m·[0m     ✗    ✗     ✓  ↑ LONG soon[0m
+[93m  LICI        SHORT    775.95    781.65    0.73    777.75    0.23  [90m·[0m[90m·[0m[90m·[0m[96m─[0m[93m●[0m[96m─[0m[96m─[0m[90m·[0m[90m·[0m[90m·[0m     ✗    ✗     ✓  ↓ SHORT soon[0m
+[1m  👁  WATCHING  (4 stocks, showing 4 closest)[0m
+[96m  VBL         SHORT    405.00    410.45    1.35    406.35    0.33  [90m·[0m[90m·[0m[90m·[0m[96m─[0m[93m●[0m[96m─[0m[96m─[0m[90m·[0m[90m·[0m[90m·[0m     ✗    ✗     ✓  WATCHING[0m
+[96m  CONCOR      SHORT    450.60    456.00    1.20    452.40    0.40  [90m·[0m[90m·[0m[90m·[0m[96m─[0m[93m●[0m[96m─[0m[96m─[0m[90m·[0m[90m·[0m[90m·[0m     ✗    ✗     ✓  WATCHING[0m
+[96m  DALBHARAT   SHORT   1844.50   1868.10    1.28      1855    0.56  [90m·[0m[90m·[0m[90m·[0m[96m─[0m[93m●[0m[96m─[0m[96m─[0m[90m·[0m[90m·[0m[90m·[0m     ✗    ✗     ✓  WATCHING[0m
+[96m  RAMCOCEM    SHORT    963.80    976.40    1.31    969.70    0.61  [90m·[0m[90m·[0m[90m·[0m[96m─[0m[93m●[0m[96m─[0m[96m─[0m[90m·[0m[90m·[0m[90m·[0m     ✗    ✗     ✓  WATCHING[0m
+[90m──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[97m  Legend:  [92m▲ above ORB[0m  [91m▼ below ORB[0m  [93m● inside ORB[0m  [96m── ORB box[0m  EMA/Vol/Wick: ✓=pass ✗=fail  │  Dist% = how far price is from breakout level
+[1m[97m══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[97m2026-03-17 11:05:03,722 | INFO     | No new breakouts on this candle[0m
+[97m2026-03-17 11:05:03,723 | INFO     |
+Active: 0 | Closed: 0 | P&L: Rs.0.00[0m
