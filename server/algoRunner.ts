@@ -377,19 +377,13 @@ class AlgoRunner {
 
     this.addLog("info", `Config file at: ${algoConfigPath} (exists: ${fs.existsSync(algoConfigPath)})`);
 
-    // Python timezone bootstrap: sets TZ + calls time.tzset() for IST logs,
-    // then uses runpy.run_path() which correctly sets __file__, __name__,
-    // sys.argv, and the full module execution context — no __file__ errors.
     const scriptName = path.basename(algoPath);
-    const tzBootstrap = [
-      "import os, time, runpy",
-      "os.environ['TZ'] = 'Asia/Kolkata'",
-      "time.tzset()",
-      `runpy.run_path(r'${scriptName}', run_name='__main__')`,
-    ].join("; ");
 
     try {
-      this.process = spawn("python3", ["-u", "-c", tzBootstrap], {
+      // Run script directly so __file__, __name__, sys.argv all work correctly.
+      // TZ=Asia/Kolkata in the env is read by Python at startup — all logging
+      // timestamps will use IST without any bootstrap tricks.
+      this.process = spawn("python3", ["-u", scriptName], {
         cwd: this.getUserAlgoDir(), // run script from its own directory
         env: {
           ...process.env,
