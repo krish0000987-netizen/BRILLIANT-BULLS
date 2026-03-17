@@ -1,0 +1,15 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[1G[0K9:06:38 AM [express] serving on port 5000
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+9:06:45 AM [express] GET /api/auth/user 401 in 4ms :: {"message":"Unauthorized"}
+[2m9:06:46 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33mtailwindcss-animate, @tailwindcss/typography[32m[39m
+[2m9:06:46 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
+9:06:46 AM [express] GET /api/auth/user 401 in 1ms :: {"message":"Unauthorized"}
+9:06:54 AM [express] GET /api/auth/user 401 in 0ms :: {"message":"Unauthorized"}
+9:06:55 AM [express] GET /api/auth/user 401 in 1ms :: {"message":"Unauthorized"}
+9:14:15 AM [express] GET /api/auth/user 401 in 1ms :: {"message":"Unauthorized"}
+9:17:56 AM [express] POST /api/register 500 in 12ms :: {"message":"Registration failed. Please try again."}
