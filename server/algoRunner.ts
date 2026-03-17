@@ -380,10 +380,29 @@ class AlgoRunner {
     const scriptName = path.basename(algoPath);
 
     try {
-      // Run script directly so __file__, __name__, sys.argv all work correctly.
-      // TZ=Asia/Kolkata in the env is read by Python at startup — all logging
-      // timestamps will use IST without any bootstrap tricks.
-      this.process = spawn("python3", ["-u", scriptName], {
+      // IST bootstrap:
+      //   1. Set TZ env + tzset() so C-level time is IST
+      //   2. Monkey-patch logging.Formatter.formatTime to always use
+      //      time.localtime (IST) — overrides any script that does
+      //      Formatter.converter = time.gmtime internally
+      //   3. runpy.run_path() sets __file__/__name__ correctly (no NameError)
+      const tzBootstrap = [
+        "import os,time,logging,runpy",
+        "os.environ['TZ']='Asia/Kolkata'",
+        "time.tzset()",
+        "def _fmt(self,record,datefmt=None):",
+        "  ct=time.localtime(record.created)",
+        "  if datefmt: return time.strftime(datefmt,ct)",
+        "  t=time.strftime(self.default_time_format,ct)",
+        "  return self.default_msec_format%(t,record.msecs)",
+        "logging.Formatter.formatTime=_fmt",
+        `runpy.run_path(r'${scriptName}',run_name='__main__')`,
+      ].join("\n");
+
+      const wrapperPath = path.join(this.getUserAlgoDir(), "_ist_runner.py");
+      fs.writeFileSync(wrapperPath, tzBootstrap, "utf-8");
+
+      this.process = spawn("python3", ["-u", "_ist_runner.py"], {
         cwd: this.getUserAlgoDir(), // run script from its own directory
         env: {
           ...process.env,

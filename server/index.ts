@@ -6,6 +6,19 @@ import { db } from "./db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
+import { execSync } from "child_process";
+import fs from "fs";
+
+function installISTTimezone() {
+  try {
+    const sitePackages = execSync("python3 -c \"import site; print(site.getsitepackages()[0])\"").toString().trim();
+    const dest = `${sitePackages}/sitecustomize.py`;
+    fs.writeFileSync(dest, "import os, time\nos.environ['TZ'] = 'Asia/Kolkata'\ntime.tzset()\n");
+    console.log("[timezone] sitecustomize.py written to", dest);
+  } catch (e) {
+    console.warn("[timezone] Could not write sitecustomize.py:", e);
+  }
+}
 
 async function seedAdminUser() {
   try {
@@ -82,6 +95,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  installISTTimezone();
   await seedAdminUser();
   await registerRoutes(httpServer, app);
 
