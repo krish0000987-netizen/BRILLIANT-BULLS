@@ -279,10 +279,17 @@ class AlgoRunner {
   }
 
   saveConfig(csvContent: string): void {
+    // Save to the hidden config dir (legacy)
     const dir = this.getConfigDir();
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(this.getConfigPath(), csvContent, "utf-8");
-    this.addLog("info", "CSV config saved to disk");
+
+    // Also save to algo directory so the script can read it as config.csv
+    const algoDir = this.getUserAlgoDir();
+    if (!fs.existsSync(algoDir)) fs.mkdirSync(algoDir, { recursive: true });
+    fs.writeFileSync(path.join(algoDir, "config.csv"), csvContent, "utf-8");
+
+    this.addLog("info", `CSV config saved to disk (${this.getConfigPath()}, ${path.join(algoDir, "config.csv")})`);
   }
 
   deleteConfig(): void {
@@ -290,6 +297,11 @@ class AlgoRunner {
     if (fs.existsSync(configPath)) {
       fs.unlinkSync(configPath);
       this.addLog("info", "CSV config deleted from disk");
+    }
+    // Also delete the copy in algo directory
+    const algoConfigPath = path.join(this.getUserAlgoDir(), "config.csv");
+    if (fs.existsSync(algoConfigPath)) {
+      fs.unlinkSync(algoConfigPath);
     }
   }
 
@@ -338,12 +350,34 @@ class AlgoRunner {
     this.logBuffer = [];
     const modeLabel = this._mode === "test" ? "[TEST MODE] " : "";
     this.addLog("info", `${modeLabel}Starting algorithm: ${path.basename(algoPath)}`);
+    this.addLog("info", `Using config: ${path.join(this.getUserAlgoDir(), "config.csv")}`);
     this._status = "running";
     this.startedAt = new Date();
 
+    const configPath = this.getConfigPath();
+    const algoConfigPath = path.join(this.getUserAlgoDir(), "config.csv");
+
+    // Ensure config is synced to the algo directory before starting
+    if (fs.existsSync(configPath) && !fs.existsSync(algoConfigPath)) {
+      const content = fs.readFileSync(configPath, "utf-8");
+      fs.writeFileSync(algoConfigPath, content, "utf-8");
+    }
+
     try {
       this.process = spawn("python3", ["-u", algoPath], {
-        env: { ...process.env, PYTHONUNBUFFERED: "1", PYTHONIOENCODING: "utf-8", TZ: "Asia/Kolkata" },
+        cwd: this.getUserAlgoDir(), // run script from its own directory
+        env: {
+          ...process.env,
+          PYTHONUNBUFFERED: "1",
+          PYTHONIOENCODING: "utf-8",
+          TZ: "Asia/Kolkata",
+          // Pass config path via multiple env vars so any script can find it
+          ALGO_CONFIG_PATH: algoConfigPath,
+          CONFIG_FILE: algoConfigPath,
+          CONFIG_PATH: algoConfigPath,
+          ALGO_CONFIG_FILE: "config.csv",       // relative path
+          ALGO_CONFIG_DIR: this.getUserAlgoDir(),
+        },
         stdio: ["ignore", "pipe", "pipe"],
       });
 
