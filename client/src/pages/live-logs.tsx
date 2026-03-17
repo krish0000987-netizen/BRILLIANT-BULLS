@@ -313,7 +313,7 @@ export default function LiveLogsPage() {
                 <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600 dark:text-green-400">
                   CSV Config Active
                 </Badge>
-                <span className="text-xs text-muted-foreground">Auto-deletes at 3:30 PM IST</span>
+                <span className="text-xs text-muted-foreground">Active until manually deleted</span>
               </div>
               {!showDeleteConfirm ? (
                 <Button
@@ -422,7 +422,7 @@ export default function LiveLogsPage() {
       </Card>
 
       <div className="flex-shrink-0 pt-2 text-xs text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
-        <span>Schedule: Auto-start 8:45 AM | Test 9:30 AM | Auto-stop 3:30 PM | CSV cleanup 3:35 PM (Mon-Fri IST)</span>
+        <span>Schedule: Auto-start 8:45 AM | Test 9:30 AM | Auto-stop 3:30 PM (Mon-Fri IST)</span>
         {algoStatus?.startedAt && (
           <span>Started: {new Date(algoStatus.startedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })} IST</span>
         )}

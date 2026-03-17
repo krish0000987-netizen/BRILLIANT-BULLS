@@ -251,7 +251,7 @@ export default function CsvUploadPage() {
             <div>
               <p className="text-sm font-medium">Active Configuration</p>
               <p className="text-xs text-muted-foreground">
-                Configuration is saved and ready for the algorithm. It will be auto-deleted at 3:30 PM IST.
+                Configuration is saved and ready for the algorithm. Delete it manually when no longer needed.
               </p>
             </div>
             {!showDeleteConfirm ? (

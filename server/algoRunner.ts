@@ -275,7 +275,10 @@ class AlgoRunner {
   }
 
   csvExists(): boolean {
-    return fs.existsSync(this.getConfigPath());
+    return (
+      fs.existsSync(this.getConfigPath()) ||
+      fs.existsSync(path.join(this.getUserAlgoDir(), "config.csv"))
+    );
   }
 
   saveConfig(csvContent: string): void {
@@ -356,12 +359,23 @@ class AlgoRunner {
 
     const configPath = this.getConfigPath();
     const algoConfigPath = path.join(this.getUserAlgoDir(), "config.csv");
+    const algoDir = this.getUserAlgoDir();
 
-    // Ensure config is synced to the algo directory before starting
+    // Ensure algo directory exists
+    if (!fs.existsSync(algoDir)) fs.mkdirSync(algoDir, { recursive: true });
+
+    // Sync config: copy from legacy path → algo dir, or vice versa
     if (fs.existsSync(configPath) && !fs.existsSync(algoConfigPath)) {
-      const content = fs.readFileSync(configPath, "utf-8");
-      fs.writeFileSync(algoConfigPath, content, "utf-8");
+      fs.writeFileSync(algoConfigPath, fs.readFileSync(configPath, "utf-8"), "utf-8");
+      this.addLog("info", "Config synced from hidden dir → algo dir");
+    } else if (!fs.existsSync(configPath) && fs.existsSync(algoConfigPath)) {
+      const legacyDir = this.getConfigDir();
+      if (!fs.existsSync(legacyDir)) fs.mkdirSync(legacyDir, { recursive: true });
+      fs.writeFileSync(configPath, fs.readFileSync(algoConfigPath, "utf-8"), "utf-8");
+      this.addLog("info", "Config synced from algo dir → hidden dir");
     }
+
+    this.addLog("info", `Config file at: ${algoConfigPath} (exists: ${fs.existsSync(algoConfigPath)})`);
 
     try {
       this.process = spawn("python3", ["-u", algoPath], {
@@ -460,13 +474,9 @@ class AlgoRunner {
       this.stop();
     }, { timezone: "Asia/Kolkata" });
 
-    const deleteJob = cron.schedule("35 15 * * 1-5", () => {
-      this.addLog("info", "[SCHEDULER] Auto-deleting CSV config at 3:35 PM IST");
-      this.deleteConfig();
-    }, { timezone: "Asia/Kolkata" });
-
-    this.cronJobs.push(startJob, testStartJob, stopJob, deleteJob);
-    this.addLog("info", "Scheduled jobs configured: Live Start 8:45 AM, Test Start 9:30 AM, Stop 3:30 PM, CSV Delete 3:35 PM (Mon-Fri IST)");
+    // CSV config is kept until manually deleted by the user via the UI
+    this.cronJobs.push(startJob, testStartJob, stopJob);
+    this.addLog("info", "Scheduled jobs configured: Live Start 8:45 AM, Test Start 9:30 AM, Auto-stop 3:30 PM (Mon-Fri IST)");
   }
 }
 
