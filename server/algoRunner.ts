@@ -114,7 +114,8 @@ const IMPORT_MAPPING: Record<string, string> = {
   barcode: "python-barcode",
   reportlab: "reportlab",
   paramiko: "paramiko",
-  AliceBlue: "alice-blue",
+  AliceBlue: "pya3",
+  alice_blue: "pya3",
   pya3: "pya3",
 };
 
@@ -243,7 +244,7 @@ class AlgoRunner {
 
     for (const pkg of packages) {
       const result = await new Promise<{ success: boolean; output: string }>((resolve) => {
-        const proc = spawn("pip3", ["install", "-q", pkg], {
+        const proc = spawn("python3", ["-m", "pip", "install", "-q", pkg], {
           env: { ...process.env },
           stdio: ["ignore", "pipe", "pipe"],
         });
