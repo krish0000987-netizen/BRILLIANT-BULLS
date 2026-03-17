@@ -4,6 +4,23 @@ import fs from "fs";
 import * as cron from "node-cron";
 import { storage } from "./storage";
 
+// Convert any UTC timestamp found in a Python log line to IST (+5:30).
+// Handles format: 2026-03-17 14:49:40,569  →  2026-03-17 20:19:40,569
+// Works regardless of what logging library the Python script uses.
+function convertUTCToIST(line: string): string {
+  return line.replace(
+    /(\d{4}-\d{2}-\d{2}) (\d{2}):(\d{2}):(\d{2})(,\d{3})?/g,
+    (_match, date, hh, mm, ss, ms) => {
+      const totalMinutes = parseInt(hh) * 60 + parseInt(mm) + 5 * 60 + 30;
+      const istH = Math.floor(totalMinutes / 60) % 24;
+      const istM = totalMinutes % 60;
+      const h = String(istH).padStart(2, "0");
+      const m = String(istM).padStart(2, "0");
+      return `${date} ${h}:${m}:${ss}${ms || ""}`;
+    }
+  );
+}
+
 interface LogLine {
   timestamp: string;
   level: string;
@@ -233,14 +250,14 @@ class AlgoRunner {
       this.process.stdout?.on("data", (data: Buffer) => {
         for (const line of data.toString("utf-8").split("\n")) {
           const trimmed = line.trim();
-          if (trimmed) this.addLog("stdout", trimmed);
+          if (trimmed) this.addLog("stdout", convertUTCToIST(trimmed));
         }
       });
 
       this.process.stderr?.on("data", (data: Buffer) => {
         for (const line of data.toString("utf-8").split("\n")) {
           const trimmed = line.trim();
-          if (trimmed) this.addLog("stderr", trimmed);
+          if (trimmed) this.addLog("stderr", convertUTCToIST(trimmed));
         }
       });
 
