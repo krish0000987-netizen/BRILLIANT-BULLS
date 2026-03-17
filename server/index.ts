@@ -2,6 +2,28 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { db } from "./db";
+import { users } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcrypt";
+
+async function seedAdminUser() {
+  try {
+    const [existing] = await db.select().from(users).where(eq(users.username, "akshay"));
+    if (!existing) {
+      const hash = await bcrypt.hash("000999", 10);
+      await db.insert(users).values({
+        username: "akshay",
+        password: hash,
+        role: "admin",
+        isActive: true,
+      });
+      console.log("[seed] Admin user created: akshay");
+    }
+  } catch (err) {
+    console.error("[seed] Failed to seed admin user:", err);
+  }
+}
 
 const app = express();
 const httpServer = createServer(app);
@@ -60,6 +82,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  await seedAdminUser();
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
