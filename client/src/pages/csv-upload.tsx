@@ -20,9 +20,11 @@ interface AlgoStatus {
 
 const EXPECTED_COLUMNS = [
   "user_id",
+  "password",
   "api_key",
-  "bullish_stocks",
-  "bearish_stocks",
+  "secret_key",
+  "session_id",
+  "stocks",
   "capital",
   "risk_per_trade",
   "max_daily_trades",
@@ -60,9 +62,12 @@ export default function CsvUploadPage() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/algo/status"] });
-      toast({ title: "Config Uploaded", description: "Your CSV configuration has been saved and is ready for the algorithm." });
+      toast({
+        title: data?.autoStarted ? "Config Uploaded — Algorithm Started!" : "Config Uploaded",
+        description: data?.message || "Your CSV configuration has been saved and is ready for the algorithm.",
+      });
       setSelectedFile(null);
       setCsvPreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -123,7 +128,7 @@ export default function CsvUploadPage() {
           CSV Configuration Upload
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Upload your Alice Blue broker configuration (Columns A to M, Rows 1-2)
+          Upload your Alice Blue broker configuration (Columns A to N, Rows 1-2). Algorithm auto-starts on upload during trading hours (8:45 AM – 3:30 PM IST).
         </p>
       </div>
 
@@ -133,7 +138,7 @@ export default function CsvUploadPage() {
           <h3 className="text-sm font-medium">Required CSV Format</h3>
         </div>
         <div className="text-xs text-muted-foreground space-y-1">
-          <p>Your CSV must have these columns (A to M) with a header row and one data row:</p>
+          <p>Your CSV must have these columns (A to N) with a header row and one data row:</p>
           <div className="flex flex-wrap gap-1 mt-2">
             {EXPECTED_COLUMNS.map((col) => (
               <Badge key={col} variant="secondary" className="text-xs">

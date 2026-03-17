@@ -29,6 +29,7 @@ Enterprise-grade security and authentication wrapper system for an existing Pyth
   - Search users by name, email, or username
 - 2026-02-22: Added algo log persistence to database (algo_logs table)
 - 2026-02-22: Updated schedule: Live 8:45 AM, Test 9:30 AM, Stop 3:10 PM, CSV Delete 4:00 PM IST
+- 2026-03-17: Updated CSV config format (user_id, password, api_key, secret_key, session_id, stocks, capital, risk_per_trade, max_daily_trades, paper_trading, test_mode, orb_range_filter, min_range_pct, max_range_pct); trading hours now 8:45 AM–3:30 PM; algo auto-starts on CSV upload during trading hours; stop cron updated to 3:30 PM, CSV delete to 3:35 PM
 - 2026-02-19: Fixed Live Logs scrolling and SSE streaming
   - Rebuilt log container with proper flexbox layout (flex-1 min-h-0) for full-height scrolling
   - SSE auto-reconnects on error with 3s delay, clears logs on reconnect to avoid duplicates
@@ -94,7 +95,7 @@ Enterprise-grade security and authentication wrapper system for an existing Pyth
 ### Trading Schedule (IST, Mon-Fri)
 - 8:45 AM - Auto-start algorithm (Live Mode)
 - 9:30 AM - Auto-start algorithm (Test Mode)
-- 3:10 PM - Auto-stop algorithm
+- 3:30 PM - Auto-stop algorithm
 - 4:00 PM - Auto-delete CSV config
 
 ### Environment Variables

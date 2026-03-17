@@ -42,10 +42,11 @@ function isWithinISTTradingHours(): { allowed: boolean; message: string } {
   const day = ist.getDay();
 
   if (day === 0 || day === 6) {
-    return { allowed: false, message: "Not available on weekends. Trading hours are Mon-Fri 8:00 AM – 3:00 PM IST." };
+    return { allowed: false, message: "Not available on weekends. Trading hours are Mon-Fri 8:45 AM – 3:30 PM IST." };
   }
-  if (totalMinutes < 480 || totalMinutes >= 900) {
-    return { allowed: false, message: "Only available between 8:00 AM and 3:00 PM IST." };
+  // 8:45 AM = 525 min, 3:30 PM = 930 min
+  if (totalMinutes < 525 || totalMinutes >= 930) {
+    return { allowed: false, message: "Only available between 8:45 AM and 3:30 PM IST." };
   }
   return { allowed: true, message: "" };
 }
@@ -806,7 +807,25 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
 
       await logAudit(getUserId(req), `Algo CSV config uploaded: ${req.file.originalname}`, "config", req);
-      res.json({ success: true, message: "Config uploaded and saved" });
+
+      // Auto-start algo if within trading hours and not already running
+      let autoStarted = false;
+      const timeCheck = isWithinISTTradingHours();
+      if (timeCheck.allowed && !algoRunner.isRunning) {
+        const startResult = algoRunner.start(true);
+        if (startResult.success) {
+          autoStarted = true;
+          await logAudit(getUserId(req), "Algo auto-started after CSV upload", "algo", req);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: autoStarted
+          ? "Config uploaded and algorithm started automatically"
+          : "Config uploaded and saved. Algorithm will auto-start at 8:45 AM IST.",
+        autoStarted,
+      });
     } catch (err: any) {
       res.status(500).json({ message: "Failed to upload config" });
     }

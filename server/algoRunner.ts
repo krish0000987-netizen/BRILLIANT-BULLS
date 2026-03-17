@@ -421,18 +421,18 @@ class AlgoRunner {
       else this.addLog("warning", "[SCHEDULER] No CSV config found, skipping test mode auto-start");
     }, { timezone: "Asia/Kolkata" });
 
-    const stopJob = cron.schedule("10 15 * * 1-5", () => {
-      this.addLog("info", "[SCHEDULER] Auto-stopping algorithm at 3:10 PM IST");
+    const stopJob = cron.schedule("30 15 * * 1-5", () => {
+      this.addLog("info", "[SCHEDULER] Auto-stopping algorithm at 3:30 PM IST");
       this.stop();
     }, { timezone: "Asia/Kolkata" });
 
-    const deleteJob = cron.schedule("0 16 * * 1-5", () => {
-      this.addLog("info", "[SCHEDULER] Auto-deleting CSV config at 4:00 PM IST");
+    const deleteJob = cron.schedule("35 15 * * 1-5", () => {
+      this.addLog("info", "[SCHEDULER] Auto-deleting CSV config at 3:35 PM IST");
       this.deleteConfig();
     }, { timezone: "Asia/Kolkata" });
 
     this.cronJobs.push(startJob, testStartJob, stopJob, deleteJob);
-    this.addLog("info", "Scheduled jobs configured: Live Start 8:45 AM, Test Start 9:30 AM, Stop 3:10 PM, CSV Delete 4:00 PM (Mon-Fri IST)");
+    this.addLog("info", "Scheduled jobs configured: Live Start 8:45 AM, Test Start 9:30 AM, Stop 3:30 PM, CSV Delete 3:35 PM (Mon-Fri IST)");
   }
 }
 

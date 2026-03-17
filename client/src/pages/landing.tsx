@@ -137,7 +137,7 @@ export default function LandingPage() {
             <FeatureCard
               icon={Clock}
               title="Automated Scheduling"
-              description="Fully automated trading schedule — live mode at 8:45 AM, test mode at 9:30 AM, auto-stop at 3:10 PM IST."
+              description="Fully automated trading schedule — live mode at 8:45 AM, test mode at 9:30 AM, auto-stop at 3:30 PM IST. Auto-starts when CSV is uploaded during trading hours."
             />
             <FeatureCard
               icon={Users}
